@@ -187,6 +187,6 @@ open "http://www.my-website.com/top-ten"
 ## License
 WASH is a free and open-source project licensed under the MIT License.
 
+## Credits
 
-
-
+Initial project layout generated with `textx startproject`.
