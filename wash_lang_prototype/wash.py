@@ -52,7 +52,7 @@ class Wash:
     @staticmethod
     def __create_instance(webdriver_path: str, script: str, encoding='utf-8', debug=False, **kwargs):
         # TODO (fivkovic): Re-visit this to verify that it works as a package.
-        path_to_metamodel = os.path.join(os.getcwd(), 'lang', 'wash.tx')
+        path_to_metamodel = os.path.join(os.path.dirname(__file__), 'lang', 'wash.tx')
 
         metamodel = metamodel_from_file(path_to_metamodel, debug=debug)
         model = metamodel.model_from_str(script, encoding=encoding, debug=debug)
