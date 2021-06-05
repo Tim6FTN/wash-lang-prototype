@@ -8,7 +8,8 @@ def wash_language():
     """
     WASH DSL - Web automation script helper domain specific language.
     """
+    from .wash import wash_classes
 
-    meta_model = metamodel_from_file(os.path.join(os.path.dirname(__file__), 'wash.tx'), autokwd=True)
-
+    path_to_metamodel = os.path.join(os.path.dirname(__file__), 'wash.tx')
+    meta_model = metamodel_from_file(path_to_metamodel, classes=wash_classes)
     return meta_model

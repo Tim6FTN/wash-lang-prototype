@@ -1,11 +1,11 @@
-import os
-from typing import Any
-
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
+from textx import textx_isinstance
 from textx.metamodel import TextXMetaModel
 
+from wash_lang_prototype.core.exceptions import WashError
 from wash_lang_prototype.core.options import WashOptions
+from wash_lang_prototype.lang.wash import *
 
 
 def create_executor_instance(script: str, options: WashOptions, metamodel: TextXMetaModel,
@@ -27,7 +27,7 @@ class WashExecutor:
         self.__debug = kwargs.pop('debug')              # type: bool
 
     def execute(self) -> dict[str, Any]:
-        document_location = 'chrome://version/'
+        document_location = self.__extract_document_location(self.__model.open_statement)
         webdriver_instance = self._start_webdriver_instance(url=document_location)
 
         execution_result = None
@@ -46,6 +46,27 @@ class WashExecutor:
 
     def _start_webdriver_instance(self, url: str) -> WebDriver:
         pass
+
+    def _is(self, object_instance, rule_class):
+        """
+        Determines whether a WASH object is an instance of a specific WASH class supported by the metamodel.
+        Args:
+            object_instance: The object to be checked.
+            rule_class: The class to be used for checking.
+        Returns:
+            True if object_instance is an instance of rule_class.
+        """
+        return textx_isinstance(object_instance, self.__metamodel[rule_class])
+
+    def __extract_document_location(self, open_statement):
+        if self._is(open_statement, OpenURLStatement.__name__):
+            return open_statement.url
+        elif self._is(open_statement, OpenFileStatement.__name__):
+            return 'file:///' + open_statement.file_path
+        elif self._is(open_statement, OpenStringStatement.__name__):
+            return 'data:text/html;charset=utf-8,' + open_statement.html
+        else:
+            raise WashError('Unexpected object "{}" of type "{}"'.format(open_statement, type(open_statement)))
 
 
 
