@@ -81,3 +81,25 @@ class FirefoxExecutor(WashExecutor):
 
         return webdriver_instance
 
+
+class EdgeExecutor(WashExecutor):
+    """
+    WASH script executor that uses Edge browser.
+    """
+    def __init__(self, **kwargs):
+        super(EdgeExecutor, self).__init__(**kwargs)
+
+    def _start_webdriver_instance(self, url: str):
+
+        # TODO (fivkovic): Use additional library to set options
+        # https://stackoverflow.com/questions/65171183/how-to-run-microsoft-edge-headless-with-selenium-python
+
+        if not os.path.exists(self._options.edge_webdriver_path):
+            raise FileNotFoundError('Unable to find Edge WebDriver on specified path: "{}"'
+                                    .format(self._options.edge_webdriver_path))
+
+        webdriver_instance = webdriver.Edge(executable_path=self._options.edge_webdriver_path)
+        webdriver_instance.get(url)
+
+        return webdriver_instance
+
