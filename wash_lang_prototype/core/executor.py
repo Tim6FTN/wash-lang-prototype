@@ -50,6 +50,7 @@ class WashExecutor:
     def _is(self, object_instance, rule_class):
         """
         Determines whether a WASH object is an instance of a specific WASH class supported by the metamodel.
+
         Args:
             object_instance: The object to be checked.
             rule_class: The class to be used for checking.
@@ -70,108 +71,115 @@ class WashExecutor:
 
     def __execute_internal(self, webdriver_instance: WebDriver) -> dict[str, Any]:
 
-        root_expression_queries = self.__model.root_expression.queries
-        root_expression_context_definition = self.__model.root_expression.context
-        root_expression_result_key = self.__model.root_expression.result_key
+        queries = self.__model.root_expression.queries
+        context_expression = self.__model.root_expression.context_expression
+        result_key = self.__model.root_expression.result_key
 
-        prepared_root_context = self.__prepare_root_context(webdriver_instance, root_expression_queries)
+        root_context = self.__prepare_root_context(webdriver_instance, queries)
 
-        result = self.__execute_sub_context(prepared_root_context, root_expression_context_definition)
-        self.__model.execution_result[root_expression_result_key] = result
+        result = self.__execute_context_expression(root_context, context_expression)
+        self.__model.execution_result[result_key] = result
 
         return self.__model.execution_result
 
-    def __prepare_root_context(self, web_driver_instance: WebDriver, root_expression_queries: list) -> list[WebElement]:
-
+    def __prepare_root_context(self, webdriver_instance: WebDriver,
+                               queries: list[Query]) -> list[WebElement]:
         root_context = None
-        for query in root_expression_queries:
-            if query.query_type_identifier == '?c':
+        for query in queries:
+            if self._is(query, CSSSelectorQuery.__name__):
                 if not root_context:
-                    root_context = web_driver_instance.find_elements_by_css_selector(query.query.query_value)
+                    root_context = webdriver_instance.find_elements_by_css_selector(query.query_value.value.strip())
                 else:
-                    root_context = root_context.find_elements_by_css_selector(query.query.query_value)
-            elif query.query_type_identifier == '?x':
+                    root_context = root_context.find_elements_by_css_selector(query.query_value.value.strip())
+            elif self._is(query, XPathSelectorQuery.__name__):
                 if not root_context:
-                    root_context = web_driver_instance.find_elements_by_xpath(query.query.query_value)
+                    root_context = webdriver_instance.find_elements_by_xpath(query.query_value.value.strip())
                 else:
-                    root_context = root_context.find_elements_by_xpath(query.query.query_value)
+                    root_context = root_context.find_elements_by_xpath(query.query_value.value.strip())
             else:
-                raise NotImplementedError(f'Unknown/unsupported root context query type: {query.query_type_identifier}')
+                raise NotImplementedError(f'Unknown/unsupported root context query type: {query.__class__}')
+
+        if not isinstance(root_context, list):
+            root_context = [root_context]
 
         return root_context
 
-    def __prepare_context(self, instance, expression_queries: list) -> list[WebElement]:
-
-        if isinstance(instance, list):
-            instance = instance[0]
-
-        query_result = None
-        for query in expression_queries:
-            if query.query_type_identifier == '?c':
-                if not query_result:
-                    query_result = instance.find_elements_by_css_selector(query.query.query_value)
-                else:
-                    query_result = query_result.find_elements_by_css_selector(query.query.query_value)
-            elif query.query_type_identifier == '?x':
-                if not query_result:
-                    query_result = instance.find_elements_by_xpath(query.query.query_value)
-                else:
-                    query_result = query_result.find_elements_by_xpath(query.query.query_value)
-            else:
-                raise NotImplementedError(f'Unknown/unsupported root context query type: {query.query_type_identifier}')
-
-        return query_result
-
-    def __execute_sub_context(self, context, context_definition):
-
-        if not isinstance(context, list):
-            context = [context]
+    def __execute_context_expression(self, context: list[WebElement], context_expression: ContextExpression):
 
         execution_result = []
-        for context_item in context:
+        for context_item in context:                                            # Each web element in current context
             context_item_execution_result = {}
-            for expression in context_definition.expressions:
-                expression_queries = expression.queries
-                expression_context_definition = expression.context
+
+            for expression in context_expression.expressions:                   # Each expression to be executed on
+                expression_queries = expression.queries                         # current context
+                expression_context_expression = expression.context_expression
                 expression_result_key = expression.result_key
 
-                temp_result = None
-                if expression_context_definition:
-                    sub_ctx_input = self.__prepare_context(context_item, expression_queries)
-                    temp_result = self.__execute_sub_context(sub_ctx_input, expression_context_definition)
+                expression_result = None
+                if expression_context_expression:
+                    sub_context = self.__prepare_sub_context(context_item, expression_queries)
+                    expression_result = self.__execute_context_expression(sub_context, expression_context_expression)
                 else:
                     for query in expression_queries:
-                        if temp_result:
-                            temp_result = self.__execute_query_return_context(query, temp_result)
+                        if expression_result:
+                            expression_result = self.__execute_query_return_context(expression_result, query)
                         else:
-                            temp_result = self.__execute_query_return_context(query, context_item)
+                            if not isinstance(context_item, list):
+                                context_item = [context_item]
+                            expression_result = self.__execute_query_return_context(context_item, query)
 
-                context_item_execution_result[expression_result_key] = temp_result
+                context_item_execution_result[expression_result_key] = expression_result
             execution_result.append(context_item_execution_result)
 
         return execution_result
 
-    def __execute_query_return_context(self, query, context_to_execute_on):
+    def __prepare_sub_context(self, web_element: WebElement, queries: list[Query]) -> list[WebElement]:
 
-        if not isinstance(context_to_execute_on, list):
-            context_to_execute_on = [context_to_execute_on]
+        # TODO: Handle this case.
+        if isinstance(web_element, list):
+            web_element = web_element[0]
 
-        for context_item in context_to_execute_on:
-            if query.query_type_identifier == '?c':
-                return context_item.find_elements_by_css_selector(query.query.query_value)
-            elif query.query_type_identifier == '?x':
-                return context_item.find_elements_by_xpath(query.query.query_value)
-            elif query.query_type_identifier == ':':
-                if query.query.query_value == 'text':
-                    return context_item.text
-                elif query.query.query_value == 'html':
-                    return context_item.get_attribute('outerHTML')
-                elif query.query.query_value == 'inner_html':
-                    return context_item.get_attribute('innerHTML')
+        query_result = None
+        for query in queries:
+            if self._is(query, CSSSelectorQuery.__name__):
+                if not query_result:
+                    query_result = web_element.find_elements_by_css_selector(query.query_value.value.strip())
                 else:
-                    return context_item.get_attribute(query.query.query_value[1:])
+                    query_result = query_result.find_elements_by_css_selector(query.query_value.value.strip())
+            elif self._is(query, XPathSelectorQuery.__name__):
+                if not query_result:
+                    query_result = web_element.find_elements_by_xpath(query.query_value.value.strip())
+                else:
+                    query_result = query_result.find_elements_by_xpath(query.query_value.value.strip())
             else:
-                raise NotImplementedError(f'Unknown query type: {query.query_type_identifier}')
+                raise NotImplementedError(f'Unknown/unsupported sub context query type: {query.__class__}')
+
+        if not isinstance(query_result, list):
+            query_result = [query_result]
+
+        return query_result
+
+    def __execute_query_return_context(self, context_to_execute_on: list[WebElement], query: Query):
+
+        # TODO: This handles only first item in list. Fix this.
+        for context_item in context_to_execute_on:
+            if self._is(query, CSSSelectorQuery.__name__):
+                return context_item.find_elements_by_css_selector(query.query_value.value)
+            elif self._is(query, XPathSelectorQuery.__name__):
+                return context_item.find_elements_by_xpath(query.query_value.value)
+            elif self._is(query, DataQuery.__name__):
+                if query.query_value.value.strip() == 'text':
+                    return context_item.text
+                elif query.query_value.value.strip() == 'html':
+                    return context_item.get_attribute('outerHTML')
+                elif query.query_value.value.strip() == 'inner_html':
+                    return context_item.get_attribute('innerHTML')
+                elif query.query_value.value[0] == '@':
+                    return context_item.get_attribute(query.query_value.value.strip()[1:])
+                else:
+                    raise NotImplementedError(f'Unsupported DataQuery value: {query.query_value.value}')
+            else:
+                raise NotImplementedError(f'Unknown query type: {query.__class__}')
 
 
 class ChromeExecutor(WashExecutor):
