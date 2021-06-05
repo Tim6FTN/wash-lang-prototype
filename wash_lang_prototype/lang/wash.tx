@@ -3,5 +3,13 @@ WashScript:
 ;
 
 OpenStatement:
+    OpenURLStatement | OpenFileStatement
+;
+
+OpenURLStatement:
     'open' url=STRING
+;
+
+OpenFileStatement:
+    'file' file_path=STRING
 ;
