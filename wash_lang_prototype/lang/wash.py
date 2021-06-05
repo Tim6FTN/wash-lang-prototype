@@ -24,10 +24,10 @@ class OpenStringStatement(OpenStatement):
 
 
 class Expression:
-    def __init__(self, parent, queries, context_expressions, result_key):
+    def __init__(self, parent, queries, context_expression, result_key):
         self.parent = parent
         self.queries = queries
-        self.context_expressions = context_expressions
+        self.context_expression = context_expression
         self.result_key = result_key
         self.execution_context = None
 
