@@ -64,5 +64,7 @@ class DataQuery(Query):
 
 
 wash_classes = [
-    OpenURLStatement, OpenFileStatement, OpenStringStatement
+    OpenURLStatement, OpenFileStatement, OpenStringStatement,
+    Expression, ContextExpression, 
+    CSSSelectorQuery, XPathSelectorQuery, DataQuery
 ]
