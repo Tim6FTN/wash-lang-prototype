@@ -38,13 +38,6 @@ class Query:
         self.query_value = query_value
 
 
-class ContextExpression:
-    def __init__(self, parent, expressions):
-        self.parent = parent
-        self.expressions = expressions
-        self.execution_result = None
-
-
 class CSSSelectorQuery(Query):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
@@ -63,8 +56,22 @@ class DataQuery(Query):
         self.execution_result = None
 
 
+class QueryValue:
+    def __init__(self, parent, value):
+        self.parent = parent
+        self.value = value.strip()
+
+
+class ContextExpression:
+    def __init__(self, parent, expressions):
+        self.parent = parent
+        self.expressions = expressions
+        self.execution_result = None
+
+
 wash_classes = [
     OpenURLStatement, OpenFileStatement, OpenStringStatement,
     Expression, ContextExpression, 
-    CSSSelectorQuery, XPathSelectorQuery, DataQuery
+    CSSSelectorQuery, XPathSelectorQuery, DataQuery,
+    QueryValue
 ]
