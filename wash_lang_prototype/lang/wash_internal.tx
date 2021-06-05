@@ -1,0 +1,23 @@
+
+/* ==================================== WASH internal configuration specification =================================== */
+
+ConfigurationOptions:
+    configuration_options*=ConfigurationOption
+;
+
+ConfigurationOption:
+    'configuration_option' name=ID '{'
+        ('description' ':' description=STRING)?
+        'parameters' '{'
+            parameters+=ConfigurationOptionParameter
+        '}'
+    '}'
+;
+
+ConfigurationOptionParameter:
+    required?='required' parameter_type=ConfigurationOptionParameterType name=ID
+;
+
+ConfigurationOptionParameterType:
+    ('string' | 'integer' | 'float' | 'boolean')('[]')?
+;
