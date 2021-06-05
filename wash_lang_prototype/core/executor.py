@@ -88,14 +88,14 @@ class WashExecutor:
         for query in queries:
             if self._is(query, CSSSelectorQuery.__name__):
                 if not root_context:
-                    root_context = webdriver_instance.find_elements_by_css_selector(query.query_value.value.strip())
+                    root_context = webdriver_instance.find_elements_by_css_selector(query.query_value.value)
                 else:
-                    root_context = root_context.find_elements_by_css_selector(query.query_value.value.strip())
+                    root_context = root_context.find_elements_by_css_selector(query.query_value.value)
             elif self._is(query, XPathSelectorQuery.__name__):
                 if not root_context:
-                    root_context = webdriver_instance.find_elements_by_xpath(query.query_value.value.strip())
+                    root_context = webdriver_instance.find_elements_by_xpath(query.query_value.value)
                 else:
-                    root_context = root_context.find_elements_by_xpath(query.query_value.value.strip())
+                    root_context = root_context.find_elements_by_xpath(query.query_value.value)
             else:
                 raise NotImplementedError(f'Unknown/unsupported root context query type: {query.__class__}')
 
@@ -143,14 +143,14 @@ class WashExecutor:
         for query in queries:
             if self._is(query, CSSSelectorQuery.__name__):
                 if not query_result:
-                    query_result = web_element.find_elements_by_css_selector(query.query_value.value.strip())
+                    query_result = web_element.find_elements_by_css_selector(query.query_value.value)
                 else:
-                    query_result = query_result.find_elements_by_css_selector(query.query_value.value.strip())
+                    query_result = query_result.find_elements_by_css_selector(query.query_value.value)
             elif self._is(query, XPathSelectorQuery.__name__):
                 if not query_result:
-                    query_result = web_element.find_elements_by_xpath(query.query_value.value.strip())
+                    query_result = web_element.find_elements_by_xpath(query.query_value.value)
                 else:
-                    query_result = query_result.find_elements_by_xpath(query.query_value.value.strip())
+                    query_result = query_result.find_elements_by_xpath(query.query_value.value)
             else:
                 raise NotImplementedError(f'Unknown/unsupported sub context query type: {query.__class__}')
 
@@ -168,14 +168,14 @@ class WashExecutor:
             elif self._is(query, XPathSelectorQuery.__name__):
                 return context_item.find_elements_by_xpath(query.query_value.value)
             elif self._is(query, DataQuery.__name__):
-                if query.query_value.value.strip() == 'text':
+                if query.query_value.value == 'text':
                     return context_item.text
-                elif query.query_value.value.strip() == 'html':
+                elif query.query_value.value == 'html':
                     return context_item.get_attribute('outerHTML')
-                elif query.query_value.value.strip() == 'inner_html':
+                elif query.query_value.value == 'inner_html':
                     return context_item.get_attribute('innerHTML')
                 elif query.query_value.value[0] == '@':
-                    return context_item.get_attribute(query.query_value.value.strip()[1:])
+                    return context_item.get_attribute(query.query_value.value[1:])
                 else:
                     raise NotImplementedError(f'Unsupported DataQuery value: {query.query_value.value}')
             else:
