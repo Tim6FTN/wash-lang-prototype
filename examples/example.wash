@@ -1,2 +1,4 @@
+** A simple example script with an example comment
+** that beautifully spans over multiple lines :)
 
-open "https://www.google.com/"
+open "https://www.google.com/"              ** A partially commented line
