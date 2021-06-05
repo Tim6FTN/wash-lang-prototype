@@ -17,3 +17,7 @@ OpenFileStatement:
 OpenStringStatement:
     'html' html=STRING
 ;
+
+Comment:
+  /\*\*.*$/
+;
