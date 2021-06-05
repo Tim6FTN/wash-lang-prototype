@@ -1,5 +1,6 @@
 WashScript:
     open_statement=OpenStatement
+    root_expression=Expression
 ;
 
 OpenStatement:
@@ -16,6 +17,26 @@ OpenFileStatement:
 
 OpenStringStatement:
     'html' html=STRING
+;
+
+Expression:
+    queries+=Query (context=Context)? '->' result_key=ID
+;
+
+Query:
+    query_type_identifier=QueryTypeIdentifier query=QueryValue
+;
+
+QueryTypeIdentifier:
+    '?c' | '?x' | ':'
+;
+
+QueryValue:
+    query_value=STRING
+;
+
+Context:
+    '{' expressions+=Expression '}'
 ;
 
 Comment:
