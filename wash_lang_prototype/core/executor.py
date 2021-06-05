@@ -27,7 +27,22 @@ class WashExecutor:
         self.__debug = kwargs.pop('debug')              # type: bool
 
     def execute(self) -> dict[str, Any]:
-        return {}
+        document_location = 'chrome://version/'
+        webdriver_instance = self._start_webdriver_instance(url=document_location)
+
+        execution_result = None
+
+        wash_result = {
+            'start_url': document_location,
+            'current_url': webdriver_instance.current_url,
+            'execution_result': execution_result
+        }
+
+        if self.__debug:
+            wash_result['script'] = self.__script
+        webdriver_instance.quit()
+
+        return wash_result
 
     def _start_webdriver_instance(self, url: str) -> WebDriver:
         pass
