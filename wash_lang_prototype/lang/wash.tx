@@ -40,7 +40,15 @@ DataQuery:
 ;
 
 QueryValue:
-    query_value=STRING
+/*
+    This regex will capture all characters until one of the following is met:
+    - '->'      (result key)
+    - '?'       (start of a selector query)
+    - ':'       (start of a data query)
+    - '{'       (start of a context expression)
+    This enables the user to write queries without quotes.
+*/
+    value=/(.|\n)+?(?=(->|\?|:|{))|[^?:{]*/
 ;
 
 ContextExpression:
