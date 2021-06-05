@@ -3,7 +3,7 @@ WashScript:
 ;
 
 OpenStatement:
-    OpenURLStatement | OpenFileStatement
+    OpenURLStatement | OpenFileStatement | OpenStringStatement
 ;
 
 OpenURLStatement:
@@ -12,4 +12,8 @@ OpenURLStatement:
 
 OpenFileStatement:
     'file' file_path=STRING
+;
+
+OpenStringStatement:
+    'html' html=STRING
 ;
