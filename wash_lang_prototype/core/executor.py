@@ -127,3 +127,24 @@ class OperaExecutor(WashExecutor):
 
         return webdriver_instance
 
+
+class SafariExecutor(WashExecutor):
+    """
+    WASH script executor that uses Safari browser.
+    """
+    def __init__(self, **kwargs):
+        super(SafariExecutor, self).__init__(**kwargs)
+
+    def _start_webdriver_instance(self, url: str):
+
+        # TODO: Safari still does not support headless mode in 2021. Disable support for now and check what to do.
+        # Reference: https://github.com/SeleniumHQ/selenium/issues/5985
+
+        if not os.path.exists(self._options.safari_webdriver_path):
+            raise FileNotFoundError('Unable to find Safari WebDriver on specified path: "{}"'
+                                    .format(self._options.safari_webdriver_path))
+
+        webdriver_instance = webdriver.Safari(executable_path=self._options.safari_webdriver_path)
+        webdriver_instance.get(url)
+
+        return webdriver_instance
