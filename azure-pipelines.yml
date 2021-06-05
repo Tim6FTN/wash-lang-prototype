@@ -24,6 +24,7 @@ steps:
     python -m pip install --upgrade pip
     pip install Arpeggio==1.10.2
     pip install textX==2.3.0
+    pip install selenium==3.141.0
     pip install pytest pytest-azurepipelines
   workingDirectory: $(Agent.BuildDirectory)
   displayName: 'Install dependencies'
