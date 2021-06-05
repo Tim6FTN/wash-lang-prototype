@@ -24,11 +24,19 @@ Expression:
 ;
 
 Query:
-    query_type_identifier=QueryTypeIdentifier query=QueryValue
+    CSSSelectorQuery | XPathSelectorQuery | DataQuery
 ;
 
-QueryTypeIdentifier:
-    '?c' | '?x' | ':'
+CSSSelectorQuery:
+    '?c' query_value=QueryValue
+;
+
+XPathSelectorQuery:
+    '?x' query_value=QueryValue
+;
+
+DataQuery:
+    ':' query_value=QueryValue
 ;
 
 QueryValue:
