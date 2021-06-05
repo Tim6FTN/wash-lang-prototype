@@ -196,7 +196,10 @@ class ChromeExecutor(WashExecutor):
         options.headless = True
         options.add_argument("--window-size=1920,1080")
 
-        if not os.path.exists(self._options.chrome_webdriver_path):
+        if not self._options.chrome_webdriver_path:
+            raise WashError('Current WASH configuration uses Chrome WebDriver,'
+                            ' but the path was not specified in options.')
+        elif not os.path.exists(self._options.chrome_webdriver_path):
             raise FileNotFoundError('Unable to find Chrome WebDriver on specified path: "{}"'
                                     .format(self._options.chrome_webdriver_path))
 
@@ -220,7 +223,10 @@ class FirefoxExecutor(WashExecutor):
         options.headless = True
         options.add_argument("--window-size=1920,1080")
 
-        if not os.path.exists(self._options.firefox_webdriver_path):
+        if not self._options.firefox_webdriver_path:
+            raise WashError('Current WASH configuration uses Firefox WebDriver,'
+                            ' but the path was not specified in options.')
+        elif not os.path.exists(self._options.firefox_webdriver_path):
             raise FileNotFoundError('Unable to find Firefox WebDriver on specified path: "{}"'
                                     .format(self._options.firefox_webdriver_path))
 
@@ -242,7 +248,10 @@ class EdgeExecutor(WashExecutor):
         # TODO (fivkovic): Use additional library to set options
         # https://stackoverflow.com/questions/65171183/how-to-run-microsoft-edge-headless-with-selenium-python
 
-        if not os.path.exists(self._options.edge_webdriver_path):
+        if not self._options.edge_webdriver_path:
+            raise WashError('Current WASH configuration uses Edge WebDriver,'
+                            ' but the path was not specified in options.')
+        elif not os.path.exists(self._options.edge_webdriver_path):
             raise FileNotFoundError('Unable to find Edge WebDriver on specified path: "{}"'
                                     .format(self._options.edge_webdriver_path))
 
@@ -266,7 +275,10 @@ class OperaExecutor(WashExecutor):
         options.headless = True
         options.add_argument("--window-size=1920,1080")
 
-        if not os.path.exists(self._options.opera_webdriver_path):
+        if not self._options.opera_webdriver_path:
+            raise WashError('Current WASH configuration uses Opera WebDriver,'
+                            ' but the path was not specified in options.')
+        elif not os.path.exists(self._options.opera_webdriver_path):
             raise FileNotFoundError('Unable to find Opera WebDriver on specified path: "{}"'
                                     .format(self._options.opera_webdriver_path))
 
@@ -285,10 +297,13 @@ class SafariExecutor(WashExecutor):
 
     def _start_webdriver_instance(self, url: str):
 
-        # TODO: Safari still does not support headless mode in 2021. Disable support for now and check what to do.
+        # TODO (fivkovic): Safari still does not support headless mode in 2021. Disable support for now.
         # Reference: https://github.com/SeleniumHQ/selenium/issues/5985
 
-        if not os.path.exists(self._options.safari_webdriver_path):
+        if not self._options.safari_webdriver_path:
+            raise WashError('Current WASH configuration uses Safari WebDriver,'
+                            ' but the path was not specified in options.')
+        elif not os.path.exists(self._options.safari_webdriver_path):
             raise FileNotFoundError('Unable to find Safari WebDriver on specified path: "{}"'
                                     .format(self._options.safari_webdriver_path))
 
