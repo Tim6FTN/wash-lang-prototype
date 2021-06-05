@@ -57,3 +57,27 @@ class ChromeExecutor(WashExecutor):
 
         return webdriver_instance
 
+
+class FirefoxExecutor(WashExecutor):
+    """
+    WASH script executor that uses Firefox browser.
+    """
+    def __init__(self, **kwargs):
+        super(FirefoxExecutor, self).__init__(**kwargs)
+
+    def _start_webdriver_instance(self, url: str):
+        from selenium.webdriver import FirefoxOptions
+
+        options = FirefoxOptions()
+        options.headless = True
+        options.add_argument("--window-size=1920,1080")
+
+        if not os.path.exists(self._options.firefox_webdriver_path):
+            raise FileNotFoundError('Unable to find Firefox WebDriver on specified path: "{}"'
+                                    .format(self._options.firefox_webdriver_path))
+
+        webdriver_instance = webdriver.Firefox(options=options, executable_path=self._options.firefox_webdriver_path)
+        webdriver_instance.get(url)
+
+        return webdriver_instance
+
