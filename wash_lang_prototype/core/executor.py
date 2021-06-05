@@ -103,3 +103,27 @@ class EdgeExecutor(WashExecutor):
 
         return webdriver_instance
 
+
+class OperaExecutor(WashExecutor):
+    """
+    WASH script executor that uses Opera browser.
+    """
+    def __init__(self, **kwargs):
+        super(OperaExecutor, self).__init__(**kwargs)
+
+    def _start_webdriver_instance(self, url: str):
+        from selenium.webdriver.opera.options import Options
+
+        options = Options()
+        options.headless = True
+        options.add_argument("--window-size=1920,1080")
+
+        if not os.path.exists(self._options.opera_webdriver_path):
+            raise FileNotFoundError('Unable to find Opera WebDriver on specified path: "{}"'
+                                    .format(self._options.opera_webdriver_path))
+
+        webdriver_instance = webdriver.Opera(options=options, executable_path=self._options.opera_webdriver_path)
+        webdriver_instance.get(url)
+
+        return webdriver_instance
+
