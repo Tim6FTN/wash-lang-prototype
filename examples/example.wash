@@ -1,4 +1,25 @@
 ** A simple example script with an example comment
 ** that beautifully spans over multiple lines :)
 
-open "https://www.google.com/"              ** A partially commented line
+open "https://fivkovic.github.io/chisel-prototype/"          ** A partially commented line
+
+?c #top-ten-table .table-entry {
+    ?c a.title : text -> title
+    ?c .source-link a {
+        : text -> link_text
+        : @href -> link_url
+    } -> link
+    ?c .item-rank : text -> rank
+    ?c .score.hidden : inner_html -> page_rank_score
+    ?c .info {
+        ?c time {
+            : @datetime -> exact_time
+            : text -> short_date
+            : html -> inner_html
+        } -> publishing_date
+        ?x ./*[contains(@class, 'description')] {
+            : @data-somecustomattr -> custom_attribute
+            : text -> description_text
+        } -> description
+    } -> info
+} -> top_ten
