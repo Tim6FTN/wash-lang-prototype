@@ -1,0 +1,7 @@
+WashScript:
+    open_statement=OpenStatement
+;
+
+OpenStatement:
+    'open' url=STRING
+;
