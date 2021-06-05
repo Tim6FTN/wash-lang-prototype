@@ -1,0 +1,19 @@
+WashScript:
+    open_statement=OpenStatement
+;
+
+OpenStatement:
+    OpenURLStatement | OpenFileStatement | OpenStringStatement
+;
+
+OpenURLStatement:
+    'open' url=STRING
+;
+
+OpenFileStatement:
+    'file' file_path=STRING
+;
+
+OpenStringStatement:
+    'html' html=STRING
+;
