@@ -20,7 +20,7 @@ OpenStringStatement:
 ;
 
 Expression:
-    queries+=Query (context=Context)? '->' result_key=ID
+    queries+=Query (context_expression=ContextExpression)? '->' result_key=ID            // TODO: Result key optional
 ;
 
 Query:
@@ -35,7 +35,7 @@ QueryValue:
     query_value=STRING
 ;
 
-Context:
+ContextExpression:
     '{' expressions+=Expression '}'
 ;
 
