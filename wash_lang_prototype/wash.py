@@ -1,12 +1,11 @@
 import codecs
 import json
 import os
-from typing import Any
 
 from textx import metamodel_for_language
 
 from wash_lang_prototype.core.exceptions import WashError
-from wash_lang_prototype.core.executor import WashExecutor, create_executor_instance
+from wash_lang_prototype.core.executor import WashExecutor, create_executor_instance, ExecutionResult
 from wash_lang_prototype.core.options import WashOptions
 
 
@@ -76,7 +75,7 @@ class Wash:
 
         return Wash(executor=executor)
 
-    def execute(self) -> dict[str, Any]:
+    def execute(self) -> ExecutionResult:
         """
         Executes the WASH script and returns the execution result in form of a dictionary.
         """

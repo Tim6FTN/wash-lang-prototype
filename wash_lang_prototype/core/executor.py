@@ -1,3 +1,4 @@
+import json
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 from textx import textx_isinstance
@@ -36,13 +37,17 @@ def create_executor_instance(script: str, options: WashOptions, metamodel: TextX
 
 
 class ExecutionResult:
-    def __init__(self, parent):
+    def __init__(self, parent, **kwargs):
         self.parent = parent
+        self.add_attribute(**kwargs)
 
     def __repr__(self):
         d = self.__dict__.copy()
         d.pop('parent')
         return str(d)
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
 
     def add_attribute(self, **kwargs):
         for k, i in kwargs.items():
@@ -63,14 +68,14 @@ class WashExecutor:
         
         execution_result = self.__execute_internal(webdriver_instance)
         
-        wash_result = {
-            'start_url': document_location,
-            'current_url': webdriver_instance.current_url,
-            'execution_result': execution_result
-        }
+        wash_result = ExecutionResult(
+            parent=None,
+            start_url=document_location,
+            current_url=webdriver_instance.current_url,
+            execution_result=execution_result)
         
         if self.__debug:
-            wash_result['script'] = self.__script
+            pass
         webdriver_instance.quit()
         
         return wash_result
