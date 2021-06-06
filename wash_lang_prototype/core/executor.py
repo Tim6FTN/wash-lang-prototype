@@ -11,11 +11,42 @@ from wash_lang_prototype.lang.wash import *
 def create_executor_instance(script: str, options: WashOptions, metamodel: TextXMetaModel,
                              model, debug=False, **kwargs):
 
-    # TODO (fivkovic): Create executor based on current configuration.
-    # Current configuration set in WASH script should contain what browser is to be used.
+    # TODO (fivkovic): Handle case when no configuration is specified to use default one?
 
-    return ChromeExecutor(**dict(kwargs, script=script, options=options,
-                                 metamodel=metamodel, model=model, debug=debug))
+    browser_type_configuration_entry = next(item for item in model.configuration.configuration_entries
+                                            if item.type.name == 'browser_type')
+    browser = next(parameter.value.value for parameter in browser_type_configuration_entry.parameters
+                   if parameter.parameter.name == 'browser_type')
+
+    if browser == 'Chrome':
+        selected_executor = ChromeExecutor
+    elif browser == 'Firefox':
+        selected_executor = FirefoxExecutor
+    elif browser == 'Edge':
+        selected_executor = EdgeExecutor
+    elif browser == 'Opera':
+        selected_executor = OperaExecutor
+    elif browser == 'Safari':
+        selected_executor = SafariExecutor
+    else:
+        raise WashError('Unsupported browser type "{}"'.format(browser))
+
+    return selected_executor(**dict(kwargs, script=script, options=options,
+                                    metamodel=metamodel, model=model, debug=debug))
+
+
+class ExecutionResult:
+    def __init__(self, parent):
+        self.parent = parent
+
+    def __repr__(self):
+        d = self.__dict__.copy()
+        d.pop('parent')
+        return str(d)
+
+    def add_attribute(self, **kwargs):
+        for k, i in kwargs.items():
+            setattr(self, k, i)
 
 
 class WashExecutor:
@@ -29,19 +60,19 @@ class WashExecutor:
     def execute(self) -> dict[str, Any]:
         document_location = self.__extract_document_location(self.__model.open_statement)
         webdriver_instance = self._start_webdriver_instance(url=document_location)
-
+        
         execution_result = self.__execute_internal(webdriver_instance)
-
+        
         wash_result = {
             'start_url': document_location,
             'current_url': webdriver_instance.current_url,
             'execution_result': execution_result
         }
-
+        
         if self.__debug:
             wash_result['script'] = self.__script
         webdriver_instance.quit()
-
+        
         return wash_result
 
     def _start_webdriver_instance(self, url: str) -> WebDriver:
@@ -50,7 +81,7 @@ class WashExecutor:
     def _is(self, object_instance, rule_class):
         """
         Determines whether a WASH object is an instance of a specific WASH class supported by the metamodel.
-
+        
         Args:
             object_instance: The object to be checked.
             rule_class: The class to be used for checking.
@@ -68,47 +99,26 @@ class WashExecutor:
             return 'data:text/html;charset=utf-8,' + open_statement.html
         else:
             raise WashError('Unexpected object "{}" of type "{}"'.format(open_statement, type(open_statement)))
-
+            
     def __execute_internal(self, webdriver_instance: WebDriver) -> dict[str, Any]:
-
+        
         queries = self.__model.root_expression.queries
         context_expression = self.__model.root_expression.context_expression
         result_key = self.__model.root_expression.result_key
 
-        root_context = self.__prepare_root_context(webdriver_instance, queries)
+        root_context = self.__prepare_context(webdriver_instance, queries)
 
         result = self.__execute_context_expression(root_context, context_expression)
         self.__model.execution_result[result_key] = result
 
         return self.__model.execution_result
 
-    def __prepare_root_context(self, webdriver_instance: WebDriver,
-                               queries: list[Query]) -> list[WebElement]:
-        root_context = None
-        for query in queries:
-            if self._is(query, CSSSelectorQuery.__name__):
-                if not root_context:
-                    root_context = webdriver_instance.find_elements_by_css_selector(query.query_value.value)
-                else:
-                    root_context = root_context.find_elements_by_css_selector(query.query_value.value)
-            elif self._is(query, XPathSelectorQuery.__name__):
-                if not root_context:
-                    root_context = webdriver_instance.find_elements_by_xpath(query.query_value.value)
-                else:
-                    root_context = root_context.find_elements_by_xpath(query.query_value.value)
-            else:
-                raise NotImplementedError(f'Unknown/unsupported root context query type: {query.__class__}')
-
-        if not isinstance(root_context, list):
-            root_context = [root_context]
-
-        return root_context
-
-    def __execute_context_expression(self, context: list[WebElement], context_expression: ContextExpression):
+    def __execute_context_expression(self, context: list[WebElement],
+                                     context_expression: ContextExpression, parent=None):
 
         execution_result = []
         for context_item in context:                                            # Each web element in current context
-            context_item_execution_result = {}
+            context_item_execution_result = ExecutionResult(parent=parent)
 
             for expression in context_expression.expressions:                   # Each expression to be executed on
                 expression_queries = expression.queries                         # current context
@@ -117,69 +127,33 @@ class WashExecutor:
 
                 expression_result = None
                 if expression_context_expression:
-                    sub_context = self.__prepare_sub_context(context_item, expression_queries)
-                    expression_result = self.__execute_context_expression(sub_context, expression_context_expression)
+                    sub_context = self.__prepare_context(context_item, expression_queries)
+                    expression_result = self.__execute_context_expression(sub_context, expression_context_expression,
+                                                                          parent=execution_result)
                 else:
                     for query in expression_queries:
                         if expression_result:
-                            expression_result = self.__execute_query_return_context(expression_result, query)
+                            expression_result = query.execute(execution_context=expression_result)
                         else:
-                            if not isinstance(context_item, list):
-                                context_item = [context_item]
-                            expression_result = self.__execute_query_return_context(context_item, query)
+                            expression_result = query.execute(execution_context=context_item)
 
-                context_item_execution_result[expression_result_key] = expression_result
+                context_item_execution_result.add_attribute(**{expression_result_key: expression_result})
             execution_result.append(context_item_execution_result)
 
+        if len(execution_result) == 1:
+            return execution_result[0]
         return execution_result
 
-    def __prepare_sub_context(self, web_element: WebElement, queries: list[Query]) -> list[WebElement]:
-
-        # TODO: Handle this case.
-        if isinstance(web_element, list):
-            web_element = web_element[0]
-
+    @staticmethod
+    def __prepare_context(execution_context: [WebElement or WebDriver], queries: list[Query]) -> list[WebElement]:
         query_result = None
         for query in queries:
-            if self._is(query, CSSSelectorQuery.__name__):
-                if not query_result:
-                    query_result = web_element.find_elements_by_css_selector(query.query_value.value)
-                else:
-                    query_result = query_result.find_elements_by_css_selector(query.query_value.value)
-            elif self._is(query, XPathSelectorQuery.__name__):
-                if not query_result:
-                    query_result = web_element.find_elements_by_xpath(query.query_value.value)
-                else:
-                    query_result = query_result.find_elements_by_xpath(query.query_value.value)
+            if not query_result:
+                query_result = query.execute(execution_context=execution_context)
             else:
-                raise NotImplementedError(f'Unknown/unsupported sub context query type: {query.__class__}')
-
-        if not isinstance(query_result, list):
-            query_result = [query_result]
+                query_result = query.execute(query_result)
 
         return query_result
-
-    def __execute_query_return_context(self, context_to_execute_on: list[WebElement], query: Query):
-
-        # TODO: This handles only first item in list. Fix this.
-        for context_item in context_to_execute_on:
-            if self._is(query, CSSSelectorQuery.__name__):
-                return context_item.find_elements_by_css_selector(query.query_value.value)
-            elif self._is(query, XPathSelectorQuery.__name__):
-                return context_item.find_elements_by_xpath(query.query_value.value)
-            elif self._is(query, DataQuery.__name__):
-                if query.query_value.value == 'text':
-                    return context_item.text
-                elif query.query_value.value == 'html':
-                    return context_item.get_attribute('outerHTML')
-                elif query.query_value.value == 'inner_html':
-                    return context_item.get_attribute('innerHTML')
-                elif query.query_value.value[0] == '@':
-                    return context_item.get_attribute(query.query_value.value[1:])
-                else:
-                    raise NotImplementedError(f'Unsupported DataQuery value: {query.query_value.value}')
-            else:
-                raise NotImplementedError(f'Unknown query type: {query.__class__}')
 
 
 class ChromeExecutor(WashExecutor):
