@@ -9,12 +9,6 @@ class WashScript:
         self.root_expression = root_expression
         self.execution_result = {}
 
-    def execute(self, execution_context):
-        return self._execute(execution_context)
-
-    def _execute(self, execution_context):
-        raise NotImplementedError()
-
 
 class OpenStatement:
     def __init__(self, parent):
@@ -46,12 +40,24 @@ class Expression:
         self.context_expression = context_expression
         self.result_key = result_key
         self.execution_context = None
-
+    
 
 class Query:
     def __init__(self, parent, query_value):
         self.parent = parent
         self.query_value = query_value
+
+    def execute(self, execution_context):
+        if isinstance(execution_context, list):
+            return self._execute_and_flatten(execution_context)
+        else:
+            return self._execute(execution_context)
+
+    def _execute(self, execution_context):
+        raise NotImplementedError("Calling this method from base class is not allowed.")
+
+    def _execute_and_flatten(self, execution_context: list):
+        raise NotImplementedError("Calling this method from base class is not allowed.")
 
 
 class SelectorQuery(Query):
@@ -59,17 +65,40 @@ class SelectorQuery(Query):
         super().__init__(parent, query_value)
 
     def execute(self, execution_context):
+        if not self._execution_context_valid(execution_context):
+            raise ValueError(f"{__class__}: Unsupported execution context type {execution_context.__class__}.")
+
         return self._execute(execution_context)
 
+    def _execution_context_valid(self, execution_context) -> bool:
+        return True
+
     def _execute(self, execution_context):
-        raise NotImplementedError()
+        raise NotImplementedError("Calling this method from parent class is not allowed.")
+
+    def _execute_and_flatten(self, execution_context):
+        raise NotImplementedError("Calling this method from parent class is not allowed.")
+
+    def _execute_selector(self, execution_context):
+        raise NotImplementedError("Calling this method from parent class is not allowed.")
 
 
 class IndexSelectorQuery(SelectorQuery):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
 
+    def _execution_context_valid(self, execution_context):
+        return isinstance(execution_context, list)
+
     def _execute(self, execution_context):
+        return self._execute_selector(execution_context)
+
+    def _execute_and_flatten(self, execution_context: list) -> list:
+        result = [self._execute_selector(execution_item) for execution_item in execution_context]
+        return list(itertools.chain.from_iterable(result))
+
+    def _execute_selector(self, execution_context):
+        # TODO (fivkovic): Add first n items feature
         if re.match(r"[-+]?\d+$", self.query_value.value) is None:
             raise ValueError(f"Index selector value is not an integer value: {self.query_value.value}.")
 
@@ -80,7 +109,7 @@ class IndexSelectorQuery(SelectorQuery):
             raise ValueError(f"Index accessor value out of range: "
                              f"given value {index} exceeds collection size ({execution_context.count}).")
 
-        return execution_context[index - 1] if index > 0 else execution_context[-index:]
+        return list(execution_context[index - 1]) if index > 0 else execution_context[-index:]
 
 
 class IDSelectorQuery(SelectorQuery):
@@ -88,6 +117,13 @@ class IDSelectorQuery(SelectorQuery):
         super().__init__(parent, query_value)
 
     def _execute(self, execution_context):
+        return self._execute_selector(execution_context)
+
+    def _execute_and_flatten(self, execution_context: list) -> list:
+        result = [self._execute_selector(execution_item) for execution_item in execution_context]
+        return list(itertools.chain.from_iterable(result))
+
+    def _execute_selector(self, execution_context):
         return execution_context.find_element_by_id(self.query_value.value)
 
 
@@ -96,6 +132,13 @@ class NameSelectorQuery(SelectorQuery):
         super().__init__(parent, query_value)
 
     def _execute(self, execution_context):
+        return self._execute_selector(execution_context)
+
+    def _execute_and_flatten(self, execution_context: list) -> list:
+        result = [self._execute_selector(execution_item) for execution_item in execution_context]
+        return list(itertools.chain.from_iterable(result))
+
+    def _execute_selector(self, execution_context):
         return execution_context.find_elements_by_name(self.query_value.value)
 
 
@@ -104,6 +147,13 @@ class TagSelectorQuery(SelectorQuery):
         super().__init__(parent, query_value)
 
     def _execute(self, execution_context):
+        return self._execute_selector(execution_context)
+
+    def _execute_and_flatten(self, execution_context: list) -> list:
+        result = [self._execute_selector(execution_item) for execution_item in execution_context]
+        return list(itertools.chain.from_iterable(result))
+
+    def _execute_selector(self, execution_context):
         return execution_context.find_elements_by_tag_name(self.query_value.value)
 
 
@@ -112,6 +162,13 @@ class ClassSelectorQuery(SelectorQuery):
         super().__init__(parent, query_value)
 
     def _execute(self, execution_context):
+        return self._execute_selector(execution_context)
+
+    def _execute_and_flatten(self, execution_context: list) -> list:
+        result = [self._execute_selector(execution_item) for execution_item in execution_context]
+        return list(itertools.chain.from_iterable(result))
+
+    def _execute_selector(self, execution_context):
         return execution_context.find_elements_by_class_name(self.query_value.value)
 
 
@@ -120,6 +177,13 @@ class CSSSelectorQuery(SelectorQuery):
         super().__init__(parent, query_value)
 
     def _execute(self, execution_context):
+        return self._execute_selector(execution_context)
+
+    def _execute_and_flatten(self, execution_context: list) -> list:
+        result = [self._execute_selector(execution_item) for execution_item in execution_context]
+        return list(itertools.chain.from_iterable(result))
+
+    def _execute_selector(self, execution_context):
         return execution_context.find_elements_by_css_selector(self.query_value.value)
 
 
@@ -128,6 +192,13 @@ class XPathSelectorQuery(SelectorQuery):
         super().__init__(parent, query_value)
 
     def _execute(self, execution_context):
+        return self._execute_selector(execution_context)
+
+    def _execute_and_flatten(self, execution_context: list) -> list:
+        result = [self._execute_selector(execution_item) for execution_item in execution_context]
+        return list(itertools.chain.from_iterable(result))
+
+    def _execute_selector(self, execution_context):
         return execution_context.find_elements_by_xpath(self.query_value.value)
 
 
