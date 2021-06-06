@@ -49,7 +49,10 @@ class Query:
 
     def execute(self, execution_context):
         if isinstance(execution_context, list):
-            return self._execute_and_flatten(execution_context)
+            if len(execution_context) == 1:
+                return self._execute(execution_context[0])
+            else:
+                return self._execute_and_flatten(execution_context)
         else:
             return self._execute(execution_context)
 
@@ -68,7 +71,13 @@ class SelectorQuery(Query):
         if not self._execution_context_valid(execution_context):
             raise ValueError(f"{__class__}: Unsupported execution context type {execution_context.__class__}.")
 
-        return self._execute(execution_context)
+        if isinstance(execution_context, list):
+            if len(execution_context) == 1:
+                return self._execute(execution_context[0])
+            else:
+                return self._execute_and_flatten(execution_context)
+        else:
+            return self._execute(execution_context)
 
     def _execution_context_valid(self, execution_context) -> bool:
         return True
