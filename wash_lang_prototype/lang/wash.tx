@@ -72,9 +72,12 @@ Query:
 ;
 
 SelectorQuery:
-    CSSSelectorQuery | XPathSelectorQuery
+    IndexSelectorQuery |
+    CSSSelectorQuery | 
+    XPathSelectorQuery
 ;
 
+IndexSelectorQuery: '?i' query_value=QueryValue;
 CSSSelectorQuery: '?c' query_value=QueryValue;
 XPathSelectorQuery: '?x' query_value=QueryValue;
 
