@@ -9,6 +9,12 @@ class WashScript:
         self.root_expression = root_expression
         self.execution_result = {}
 
+    def execute(self, execution_context):
+        return self._execute(execution_context)
+
+    def _execute(self, execution_context):
+        raise NotImplementedError()
+
 
 class OpenStatement:
     def __init__(self, parent):
@@ -57,6 +63,24 @@ class SelectorQuery(Query):
 
     def _execute(self, execution_context):
         raise NotImplementedError()
+
+
+class IndexSelectorQuery(SelectorQuery):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+
+    def _execute(self, execution_context):
+        if re.match(r"[-+]?\d+$", self.query_value.value) is None:
+            raise ValueError(f"Index selector value is not an integer value: {self.query_value.value}.")
+
+        index = int(self.query_value.value)
+        if abs(index) == 0:
+            raise ValueError(f"Index selector value is not valid: {self.query_value.value}.")
+        if abs(index) > execution_context.count:
+            raise ValueError(f"Index accessor value out of range: "
+                             f"given value {index} exceeds collection size ({execution_context.count}).")
+
+        return execution_context[index - 1] if index > 0 else execution_context[-index:]
 
 
 class IDSelectorQuery(SelectorQuery):
@@ -130,7 +154,7 @@ wash_classes = [
     WashScript,
     OpenURLStatement, OpenFileStatement, OpenStringStatement,
     Expression, ContextExpression, 
-    IDSelectorQuery, NameSelectorQuery, TagSelectorQuery, ClassSelectorQuery,
+    IndexSelectorQuery, IDSelectorQuery, NameSelectorQuery, TagSelectorQuery, ClassSelectorQuery,
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
     QueryValue
