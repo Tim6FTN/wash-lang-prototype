@@ -159,27 +159,9 @@ class WashExecutor:
 
         return query_result
 
-    def __execute_query_return_context(self, context_to_execute_on: list[WebElement], query: Query):
-
-        # TODO: This handles only first item in list. Fix this.
-        for context_item in context_to_execute_on:
-            if self._is(query, CSSSelectorQuery.__name__):
-                return context_item.find_elements_by_css_selector(query.query_value.value)
-            elif self._is(query, XPathSelectorQuery.__name__):
-                return context_item.find_elements_by_xpath(query.query_value.value)
-            elif self._is(query, DataQuery.__name__):
-                if query.query_value.value == 'text':
-                    return context_item.text
-                elif query.query_value.value == 'html':
-                    return context_item.get_attribute('outerHTML')
-                elif query.query_value.value == 'inner_html':
-                    return context_item.get_attribute('innerHTML')
-                elif query.query_value.value[0] == '@':
-                    return context_item.get_attribute(query.query_value.value[1:])
-                else:
-                    raise NotImplementedError(f'Unsupported DataQuery value: {query.query_value.value}')
-            else:
-                raise NotImplementedError(f'Unknown query type: {query.__class__}')
+    @staticmethod
+    def __execute_query_return_context(context_to_execute_on: list[WebElement], query: Query):
+        return query.execute(execution_context=context_to_execute_on)
 
 
 class ChromeExecutor(WashExecutor):
