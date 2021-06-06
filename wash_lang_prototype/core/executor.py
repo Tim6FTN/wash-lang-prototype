@@ -37,11 +37,12 @@ class WashExecutor:
     """
 
     def __init__(self, **kwargs):
-        self._options = kwargs.pop('options')           # type: WashOptions
-        self.__script = kwargs.pop('script')            # type: str
-        self.__metamodel = kwargs.pop('metamodel')      # type: TextXMetaModel
-        self.__model = kwargs.pop('model')              # type: WashScript
-        self.__debug = kwargs.pop('debug')              # type: bool
+        self._options = kwargs.pop('options')                       # type: WashOptions
+        self.__script = kwargs.pop('script')                        # type: str
+        self.__metamodel = kwargs.pop('metamodel')                  # type: TextXMetaModel
+        self.__model = kwargs.pop('model')                          # type: WashScript
+        self.__debug = kwargs.pop('debug')                          # type: bool
+        self._time_to_wait = kwargs.pop('implicit_wait_value')      # type: int
 
     def execute(self) -> ExecutionResult:
         """
@@ -177,6 +178,7 @@ class ChromeExecutor(WashExecutor):
 
         webdriver_instance = webdriver.Chrome(options=self.__chrome_options,
                                               executable_path=self._options.chrome_webdriver_path)
+        webdriver_instance.implicitly_wait(time_to_wait=self._time_to_wait)
         webdriver_instance.get(url)
 
         return webdriver_instance
@@ -200,6 +202,7 @@ class FirefoxExecutor(WashExecutor):
 
         webdriver_instance = webdriver.Firefox(options=self.__firefox_options,
                                                executable_path=self._options.firefox_webdriver_path)
+        webdriver_instance.implicitly_wait(time_to_wait=self._time_to_wait)
         webdriver_instance.get(url)
 
         return webdriver_instance
@@ -226,6 +229,7 @@ class EdgeExecutor(WashExecutor):
                                     .format(self._options.edge_webdriver_path))
 
         webdriver_instance = webdriver.Edge(executable_path=self._options.edge_webdriver_path)
+        webdriver_instance.implicitly_wait(time_to_wait=self._time_to_wait)
         webdriver_instance.get(url)
 
         return webdriver_instance
@@ -249,6 +253,7 @@ class OperaExecutor(WashExecutor):
 
         webdriver_instance = webdriver.Opera(options=self.__opera_options,
                                              executable_path=self._options.opera_webdriver_path)
+        webdriver_instance.implicitly_wait(time_to_wait=self._time_to_wait)
         webdriver_instance.get(url)
 
         return webdriver_instance
@@ -275,6 +280,7 @@ class SafariExecutor(WashExecutor):
                                     .format(self._options.safari_webdriver_path))
 
         webdriver_instance = webdriver.Safari(executable_path=self._options.safari_webdriver_path)
+        webdriver_instance.implicitly_wait(time_to_wait=self._time_to_wait)
         webdriver_instance.get(url)
 
         return webdriver_instance
