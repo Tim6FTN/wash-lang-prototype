@@ -98,9 +98,10 @@ QueryValue:
     - '?'       (start of a selector query)
     - ':'       (start of a data query)
     - '{'       (start of a context expression)
+    - '\n'      (new line)
     This enables the user to write queries without quotes.
 */
-    value=/(.|\n)+?(?=(->|\?|:|{))|[^?:{]*/
+    value=/(.|\n)+?(?=(->|\?|:|{|\n))|[^?:{]*/
 ;
 
 ContextExpression:
