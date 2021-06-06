@@ -5,7 +5,7 @@ WashScript:
         import_statements*=ImportStatement
         ('use configuration' configuration=[Configuration])?
         open_statement=OpenStatement
-        root_expression=Expression
+        expressions*=Expression
     )
       |
     (

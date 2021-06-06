@@ -62,7 +62,7 @@ class WashExecutor:
         self.__model = kwargs.pop('model')
         self.__debug = kwargs.pop('debug')              # type: bool
 
-    def execute(self) -> dict[str, Any]:
+    def execute(self) -> ExecutionResult:
         document_location = self.__extract_document_location(self.__model.open_statement)
         webdriver_instance = self._start_webdriver_instance(url=document_location)
         
@@ -75,7 +75,7 @@ class WashExecutor:
             execution_result=execution_result)
         
         if self.__debug:
-            pass
+            wash_result.add_attribute(**{'script': self.__script})
         webdriver_instance.quit()
         
         return wash_result
