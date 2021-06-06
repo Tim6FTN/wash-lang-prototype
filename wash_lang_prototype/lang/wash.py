@@ -67,6 +67,14 @@ class IDSelectorQuery(SelectorQuery):
         return execution_context.find_element_by_id(self.query_value.value)
 
 
+class NameSelectorQuery(SelectorQuery):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+
+    def _execute(self, execution_context):
+        return execution_context.find_elements_by_name(self.query_value.value)
+
+
 class CSSSelectorQuery(SelectorQuery):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
