@@ -5,6 +5,7 @@ WashScript:
         import_statements*=ImportStatement
         ('use configuration' configuration=[Configuration])?
         open_statement=OpenStatement
+        root_expression=Expression
     )
       |
     (
@@ -60,6 +61,41 @@ PrimitiveValue:
 
 ArrayValue:
     '[' value+=STRING[','] ']' | '[' value+=STRICTFLOAT[','] ']' | '[' value+=INT[','] ']' | '[' value+=BOOL[','] ']'
+
+Expression:
+    queries+=Query (context_expression=ContextExpression)? '->' result_key=ID            // TODO: Result key optional
+;
+
+Query:
+    CSSSelectorQuery | XPathSelectorQuery | DataQuery
+;
+
+CSSSelectorQuery:
+    '?c' query_value=QueryValue
+;
+
+XPathSelectorQuery:
+    '?x' query_value=QueryValue
+;
+
+DataQuery:
+    ':' query_value=QueryValue
+;
+
+QueryValue:
+/*
+    This regex will capture all characters until one of the following is met:
+    - '->'      (result key)
+    - '?'       (start of a selector query)
+    - ':'       (start of a data query)
+    - '{'       (start of a context expression)
+    This enables the user to write queries without quotes.
+*/
+    value=/(.|\n)+?(?=(->|\?|:|{))|[^?:{]*/
+;
+
+ContextExpression:
+    '{' expressions+=Expression '}'
 ;
 
 Comment:

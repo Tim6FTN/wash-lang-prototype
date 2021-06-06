@@ -23,6 +23,55 @@ class OpenStringStatement(OpenStatement):
         self.html = html
 
 
+class Expression:
+    def __init__(self, parent, queries, context_expression, result_key):
+        self.parent = parent
+        self.queries = queries
+        self.context_expression = context_expression
+        self.result_key = result_key
+        self.execution_context = None
+
+
+class Query:
+    def __init__(self, parent, query_value):
+        self.parent = parent
+        self.query_value = query_value
+
+
+class CSSSelectorQuery(Query):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+        self.execution_result = None
+
+
+class XPathSelectorQuery(Query):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+        self.execution_result = None
+
+
+class DataQuery(Query):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+        self.execution_result = None
+
+
+class QueryValue:
+    def __init__(self, parent, value):
+        self.parent = parent
+        self.value = value.strip()
+
+
+class ContextExpression:
+    def __init__(self, parent, expressions):
+        self.parent = parent
+        self.expressions = expressions
+        self.execution_result = None
+
+
 wash_classes = [
-    OpenURLStatement, OpenFileStatement, OpenStringStatement
+    OpenURLStatement, OpenFileStatement, OpenStringStatement,
+    Expression, ContextExpression, 
+    CSSSelectorQuery, XPathSelectorQuery, DataQuery,
+    QueryValue
 ]
