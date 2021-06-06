@@ -1,0 +1,2 @@
+include wash_lang_prototype/lang/*.tx
+include wash_lang_prototype/internal/*.washy

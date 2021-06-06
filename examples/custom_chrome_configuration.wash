@@ -1,0 +1,20 @@
+
+define configuration custom_chrome_configuration {
+    description: "This is an example custom Chrome browser configuration"
+    option browser_type {
+        browser_type: "Chrome"
+    }
+    option user_agent {
+        user_agent: "USER_AGENT_VALUE"
+    }
+    option access_as_mobile_device {
+        is_active: True
+    }
+    option use_incognito_mode {
+        is_active: True
+    }
+    option window_size {
+        width: 1920
+        height: 1080
+    }
+}
