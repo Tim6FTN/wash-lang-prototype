@@ -48,16 +48,31 @@ class Query:
         self.query_value = query_value
 
 
-class CSSSelectorQuery(Query):
+class SelectorQuery(Query):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
-        self.execution_result = None
+
+    def execute(self, execution_context):
+        return self._execute(execution_context)
+
+    def _execute(self, execution_context):
+        raise NotImplementedError()
 
 
-class XPathSelectorQuery(Query):
+class CSSSelectorQuery(SelectorQuery):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
-        self.execution_result = None
+
+    def _execute(self, execution_context):
+        return execution_context.find_elements_by_css_selector(self.query_value.value)
+
+
+class XPathSelectorQuery(SelectorQuery):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+
+    def _execute(self, execution_context):
+        return execution_context.find_elements_by_xpath(self.query_value.value)
 
 
 class DataQuery(Query):
