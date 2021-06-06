@@ -15,25 +15,21 @@ from wash_lang_prototype.lang.wash import *
 def create_executor_instance(script: str, options: WashOptions, metamodel: TextXMetaModel,
                              model: WashScript, debug=False, **kwargs):
 
+    from wash_lang_prototype.core.configuration_handler import ChromeConfigurationHandler, FirefoxConfigurationHandler, EdgeConfigurationHandler, OperaConfigurationHandler
+    chrome_handler = ChromeConfigurationHandler()
+    firefox_handler = FirefoxConfigurationHandler()
+    edge_handler = EdgeConfigurationHandler()
+    opera_handler = OperaConfigurationHandler()
+
     # TODO (fivkovic): Handle case when no configuration is specified to use default one?
-
-    from wash_lang_prototype.core.configuration_handler import ChromeHandler, FirefoxHandler, EdgeHandler, OperaHandler
-    chrome_handler = ChromeHandler()
-    firefox_handler = FirefoxHandler()
-    edge_handler = EdgeHandler()
-    opera_handler = OperaHandler()
-
     chrome_handler.set_next(firefox_handler).set_next(edge_handler).set_next(opera_handler)
 
-    configuration_handler = chrome_handler
-    selected_executor, browser_options = configuration_handler.handle(model.configuration)
+    result = chrome_handler.handle(model.configuration)
 
-    # TODO (fivkovic): Handle case when no configuration is specified to use default one?
-
-    return selected_executor(browser_options=browser_options,
-                             **dict(kwargs, script=script, options=options,
-                             metamodel=metamodel, model=model, debug=debug))
-
+    return result.executor_type(browser_options=result.browser_options,
+                                **dict(kwargs, script=script, options=options,
+                                       metamodel=metamodel, model=model, debug=debug,
+                                       implicit_wait_value=result.implicit_wait_value))
 
 class WashExecutor:
     """
