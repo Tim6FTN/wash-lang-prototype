@@ -1,14 +1,46 @@
 import itertools
+import json
 import re
 
+
+class ExecutionResult:
+    def __init__(self, parent=None, **kwargs):
+        self.parent = parent
+        self.add_attribute(**kwargs)
+
+    def __repr__(self):
+        d = self.__dict__.copy()
+        d.pop('parent')
+        return str(d)
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
+    def add_attribute(self, **kwargs):
+        for k, i in kwargs.items():
+            if hasattr(self, k):
+                attribute = getattr(self, k)
+                if isinstance(attribute, ExecutionResult):
+                    x = {y: i.__dict__[y] for y in i.__dict__ if y != 'parent'}
+                    attribute.add_attribute(**x)
+                elif isinstance(attribute, list):
+                    for new_item, existing_item in zip(i, attribute):
+                        x = {i: new_item.__dict__[i] for i in new_item.__dict__ if i != 'parent'}
+                        existing_item.add_attribute(**x)
+                else:
+                    attribute = i
+            else:
+                setattr(self, k, i)
+
+
 class WashScript:
-    def __init__(self, configuration_definitions, import_statements, configuration, open_statement, root_expression):
+    def __init__(self, configuration_definitions, import_statements, configuration, open_statement, expressions):
         self.configuration_definitions = configuration_definitions
         self.import_statements = import_statements
         self.configuration = configuration
         self.open_statement = open_statement
-        self.root_expression = root_expression
-        self.execution_result = {}
+        self.expressions = expressions
+        self.execution_result = ExecutionResult()
 
 
 class OpenStatement:
@@ -58,10 +90,10 @@ class Query:
             return self._execute(execution_context)
 
     def _execute(self, execution_context):
-        raise NotImplementedError("Calling this method from base class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
     def _execute_and_flatten(self, execution_context: list):
-        raise NotImplementedError("Calling this method from base class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
 
 class SelectorQuery(Query):
@@ -84,13 +116,13 @@ class SelectorQuery(Query):
         return True
 
     def _execute(self, execution_context):
-        raise NotImplementedError("Calling this method from parent class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
     def _execute_and_flatten(self, execution_context):
-        raise NotImplementedError("Calling this method from parent class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
     def _execute_selector(self, execution_context):
-        raise NotImplementedError("Calling this method from parent class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
 
 class IndexSelectorQuery(SelectorQuery):

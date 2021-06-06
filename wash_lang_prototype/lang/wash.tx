@@ -5,7 +5,7 @@ WashScript:
         import_statements*=ImportStatement
         ('use configuration' configuration=[Configuration])?
         open_statement=OpenStatement
-        root_expression=Expression
+        expressions*=Expression
     )
       |
     (
@@ -81,12 +81,12 @@ SelectorQuery:
     XPathSelectorQuery
 ;
 
-IndexSelectorQuery: '?i' query_value=QueryValue;
+IndexSelectorQuery: '?i ' query_value=QueryValue;
 IDSelectorQuery: '?id' query_value=QueryValue;
 NameSelectorQuery: '?n' query_value=QueryValue;
 TagSelectorQuery: '?t' query_value=QueryValue;
 ClassSelectorQuery: '?cl' query_value=QueryValue;
-CSSSelectorQuery: '?c' query_value=QueryValue;
+CSSSelectorQuery: '?c ' query_value=QueryValue;
 XPathSelectorQuery: '?x' query_value=QueryValue;
 
 DataQuery: ':' query_value=QueryValue;
@@ -98,9 +98,10 @@ QueryValue:
     - '?'       (start of a selector query)
     - ':'       (start of a data query)
     - '{'       (start of a context expression)
+    - '\n'      (new line)
     This enables the user to write queries without quotes.
 */
-    value=/(.|\n)+?(?=(->|\?|:|{))|[^?:{]*/
+    value=/(.|\n)+?(?=(->|\?|:|{|\n))|[^?:{]*/
 ;
 
 ContextExpression:

@@ -35,20 +35,6 @@ def create_executor_instance(script: str, options: WashOptions, metamodel: TextX
                                     metamodel=metamodel, model=model, debug=debug))
 
 
-class ExecutionResult:
-    def __init__(self, parent):
-        self.parent = parent
-
-    def __repr__(self):
-        d = self.__dict__.copy()
-        d.pop('parent')
-        return str(d)
-
-    def add_attribute(self, **kwargs):
-        for k, i in kwargs.items():
-            setattr(self, k, i)
-
-
 class WashExecutor:
     def __init__(self, **kwargs):
         self._options = kwargs.pop('options')           # type: WashOptions
@@ -57,20 +43,20 @@ class WashExecutor:
         self.__model = kwargs.pop('model')
         self.__debug = kwargs.pop('debug')              # type: bool
 
-    def execute(self) -> dict[str, Any]:
+    def execute(self) -> ExecutionResult:
         document_location = self.__extract_document_location(self.__model.open_statement)
         webdriver_instance = self._start_webdriver_instance(url=document_location)
         
         execution_result = self.__execute_internal(webdriver_instance)
         
-        wash_result = {
-            'start_url': document_location,
-            'current_url': webdriver_instance.current_url,
-            'execution_result': execution_result
-        }
+        wash_result = ExecutionResult(
+            parent=None,
+            start_url=document_location,
+            current_url=webdriver_instance.current_url,
+            execution_result=execution_result)
         
         if self.__debug:
-            wash_result['script'] = self.__script
+            wash_result.add_attribute(**{'script': self.__script})
         webdriver_instance.quit()
         
         return wash_result
@@ -100,7 +86,7 @@ class WashExecutor:
         else:
             raise WashError('Unexpected object "{}" of type "{}"'.format(open_statement, type(open_statement)))
             
-    def __execute_internal(self, webdriver_instance: WebDriver) -> dict[str, Any]:
+    def __execute_internal(self, webdriver_instance: WebDriver) -> ExecutionResult:
         
         queries = self.__model.root_expression.queries
         context_expression = self.__model.root_expression.context_expression
@@ -109,7 +95,7 @@ class WashExecutor:
         root_context = self.__prepare_context(webdriver_instance, queries)
 
         result = self.__execute_context_expression(root_context, context_expression)
-        self.__model.execution_result[result_key] = result
+        self.__model.execution_result.add_attribute(**{result_key: result})
 
         return self.__model.execution_result
 
