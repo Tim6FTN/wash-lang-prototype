@@ -26,6 +26,11 @@ def wash_language():
                                      builtin_models=builtin_models_repository, 
                                      autokwd=True)
 
+    meta_model.register_scope_providers({
+        "ConfigurationParameterValue.parameter": scoping.providers.RelativeName(
+            "parent.type.parameters"),
+    })
+
     return meta_model
 
 
