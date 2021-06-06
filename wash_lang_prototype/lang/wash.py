@@ -80,6 +80,7 @@ class ContextExpression:
 
 
 wash_classes = [
+    WashScript,
     OpenURLStatement, OpenFileStatement, OpenStringStatement,
     Expression, ContextExpression, 
     CSSSelectorQuery, XPathSelectorQuery, DataQuery,
