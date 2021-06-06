@@ -1,4 +1,9 @@
 ** A simple example script with an example comment
 ** that beautifully spans over multiple lines :)
 
+import "custom_chrome_configuration.wash"
+import "custom_firefox_configuration.wash"
+
+use configuration custom_firefox_configuration
+
 open "https://www.google.com/"              ** A partially commented line
