@@ -1,4 +1,8 @@
+import wash_internal
+
 WashScript:
+    configuration_definitions*=Configuration
+    ('use configuration' configuration=[Configuration])?
     open_statement=OpenStatement
 ;
 
@@ -16,6 +20,36 @@ OpenFileStatement:
 
 OpenStringStatement:
     'html' html=STRING
+;
+
+Configuration:
+    'define configuration' name=ID '{'
+        ('description' ':' description=STRING)?
+        configuration_entries+=ConfigurationEntry
+    '}'
+;
+
+ConfigurationEntry:
+    'option' type=[ConfigurationOption] '{'
+        parameters*=ConfigurationParameterValue
+    '}'
+;
+
+ConfigurationParameterValue:
+    parameter=[ConfigurationOptionParameter] ':' value=Value
+;
+
+// TODO: Re-check if this value should be moved to internal language definition.
+Value:
+    PrimitiveValue | ArrayValue
+;
+
+PrimitiveValue:
+    value=STRING | value=STRICTFLOAT | value=INT | value=BOOL
+;
+
+ArrayValue:
+    '[' value+=STRING[','] ']' | '[' value+=STRICTFLOAT[','] ']' | '[' value+=INT[','] ']' | '[' value+=BOOL[','] ']'
 ;
 
 Comment:
