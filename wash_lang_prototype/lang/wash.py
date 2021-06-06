@@ -217,15 +217,21 @@ class DataQuery(Query):
         super().__init__(parent, query_value)
 
     def _execute(self, execution_context):
+        return self.__execute_data_query(execution_context)
+
+    def _execute_and_flatten(self, execution_context: list) -> list:
+        return [self.__execute_data_query(execution_item) for execution_item in execution_context]
+
+    def __execute_data_query(self, execution_item):
         if self.query_value.value == 'text':
-            return execution_context.text
+            return execution_item.text
         elif self.query_value.value == 'html':
-            return execution_context.get_attribute('outerHTML')
+            return execution_item.get_attribute('outerHTML')
         elif self.query_value.value == 'inner_html':
-            return execution_context.get_attribute('innerHTML')
+            return execution_item.get_attribute('innerHTML')
         elif self.query_value.value[0] == '@':
             attribute_name = self.query_value.value[1:]
-            return execution_context.get_attribute(attribute_name)
+            return execution_item.get_attribute(attribute_name)
         else:
             raise ValueError(f'Unsupported DataQuery value: {self.query_value.value}')
 
