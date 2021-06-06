@@ -1,0 +1,43 @@
+
+configuration_option browser_type {
+    description: "Specifies the browser to be used."
+    parameters {
+        required string browser_type
+    }
+}
+
+configuration_option user_agent {
+    description: "Specifies the user-agent to be used."
+    parameters {
+        required string user_agent
+    }
+}
+
+configuration_option access_as_mobile_device {
+    description: "If active, enables access to website as mobile device."
+    parameters {
+        required boolean is_active
+    }
+}
+
+configuration_option use_incognito_mode {
+    description: "If active, runs browser in incognito mode."
+    parameters {
+        required boolean is_active
+    }
+}
+
+configuration_option window_size {
+    description: "Specifies window size of the browser instance."
+    parameters {
+        required integer width
+        required integer height
+    }
+}
+
+configuration_option wait_timeout {
+    description: "Specifies time duration (in seconds) to poll the DOM when trying to find any element(s) not immediately available."
+    parameters {
+        required integer timeout
+    }
+}

@@ -1,0 +1,20 @@
+
+define configuration custom_firefox_configuration {
+    description: "This is an example custom Firefox browser configuration"
+    option browser_type {
+        browser_type: "Firefox"
+    }
+    option user_agent {
+        user_agent: "USER_AGENT_VALUE"
+    }
+    option access_as_mobile_device {
+        is_active: False
+    }
+    option use_incognito_mode {
+        is_active: False
+    }
+    option window_size {
+        width: 1920
+        height: 1080
+    }
+}
