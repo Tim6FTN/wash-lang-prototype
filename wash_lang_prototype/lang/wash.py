@@ -1,5 +1,5 @@
 import itertools
-
+import re
 
 class WashScript:
     def __init__(self, configuration_definitions, import_statements, configuration, open_statement, root_expression):
@@ -215,7 +215,19 @@ class XPathSelectorQuery(SelectorQuery):
 class DataQuery(Query):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
-        self.execution_result = None
+
+    def _execute(self, execution_context):
+        if self.query_value.value == 'text':
+            return execution_context.text
+        elif self.query_value.value == 'html':
+            return execution_context.get_attribute('outerHTML')
+        elif self.query_value.value == 'inner_html':
+            return execution_context.get_attribute('innerHTML')
+        elif self.query_value.value[0] == '@':
+            attribute_name = self.query_value.value[1:]
+            return execution_context.get_attribute(attribute_name)
+        else:
+            raise ValueError(f'Unsupported DataQuery value: {self.query_value.value}')
 
 
 class QueryValue:
