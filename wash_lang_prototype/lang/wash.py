@@ -1,36 +1,7 @@
 import itertools
-import json
 import re
 
-
-class ExecutionResult:
-    def __init__(self, parent=None, **kwargs):
-        self.parent = parent
-        self.add_attribute(**kwargs)
-
-    def __repr__(self):
-        d = self.__dict__.copy()
-        d.pop('parent')
-        return str(d)
-
-    def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-    def add_attribute(self, **kwargs):
-        for k, i in kwargs.items():
-            if hasattr(self, k):
-                attribute = getattr(self, k)
-                if isinstance(attribute, ExecutionResult):
-                    x = {y: i.__dict__[y] for y in i.__dict__ if y != 'parent'}
-                    attribute.add_attribute(**x)
-                elif isinstance(attribute, list):
-                    for new_item, existing_item in zip(i, attribute):
-                        x = {i: new_item.__dict__[i] for i in new_item.__dict__ if i != 'parent'}
-                        existing_item.add_attribute(**x)
-                else:
-                    attribute = i
-            else:
-                setattr(self, k, i)
+from wash_lang_prototype.core.result import ExecutionResult
 
 
 class WashScript:
