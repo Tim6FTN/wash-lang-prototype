@@ -27,6 +27,7 @@ def wash_language():
                                      autokwd=True)
 
     meta_model.register_scope_providers({
+        "*.*": scoping.providers.PlainNameImportURI(),
         "ConfigurationParameterValue.parameter": scoping.providers.RelativeName(
             "parent.type.parameters"),
     })

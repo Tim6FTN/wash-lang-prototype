@@ -1,9 +1,19 @@
 import wash_internal
 
 WashScript:
-    configuration_definitions*=Configuration
-    ('use configuration' configuration=[Configuration])?
-    open_statement=OpenStatement
+    (
+        import_statements*=ImportStatement
+        ('use configuration' configuration=[Configuration])?
+        open_statement=OpenStatement
+    )
+      |
+    (
+        configuration_definitions*=Configuration
+    )
+;
+
+ImportStatement:
+    'import' importURI=STRING
 ;
 
 OpenStatement:
