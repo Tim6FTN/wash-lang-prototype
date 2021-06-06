@@ -74,12 +74,14 @@ Query:
 SelectorQuery:
     IndexSelectorQuery |
     IDSelectorQuery |
+    NameSelectorQuery |
     CSSSelectorQuery | 
     XPathSelectorQuery
 ;
 
 IndexSelectorQuery: '?i' query_value=QueryValue;
 IDSelectorQuery: '?id' query_value=QueryValue;
+NameSelectorQuery: '?n' query_value=QueryValue;
 CSSSelectorQuery: '?c' query_value=QueryValue;
 XPathSelectorQuery: '?x' query_value=QueryValue;
 
