@@ -1,17 +1,53 @@
 import itertools
 import re
 
+from wash_lang_prototype.core.exceptions import WashError
 from wash_lang_prototype.core.result import ExecutionResult
 
 
-class WashScript:
-    def __init__(self, configuration_definitions, import_statements, configuration, open_statement, expressions):
-        self.configuration_definitions = configuration_definitions
-        self.import_statements = import_statements
-        self.configuration = configuration
-        self.open_statement = open_statement
-        self.expressions = expressions
+class WashBase:
+    """
+    Represents the base class for all custom classes used during the meta-model instantiation.
+    """
+    def __init__(self, *args, **kwargs):
+        if args:
+            self.parent = args[0]
+        for key, item in kwargs.items():
+            setattr(self, key, item)
+        super().__init__()
+
+    # TODO (fivkovic): Scope, Context
+
+
+class WashScript(WashBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.execution_result = ExecutionResult()
+
+
+class Configuration(WashBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.__is_valid():
+            raise WashError('Configuration invalid: not all required parameters were specified.')
+
+    # noinspection PyUnresolvedReferences
+    def __is_valid(self):
+        for e in self.configuration_entries:
+            required_parameters = [p for p in e.type.parameters if p.required]
+            if len(required_parameters) != len(e.parameters):
+                return False
+        return True
+
+
+class ConfigurationEntry(WashBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class ConfigurationParameterValue(WashBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class OpenStatement:
@@ -254,6 +290,7 @@ class ContextExpression:
 
 wash_classes = [
     WashScript,
+    Configuration, ConfigurationEntry, ConfigurationParameterValue,
     OpenURLStatement, OpenFileStatement, OpenStringStatement,
     Expression, ContextExpression, 
     IndexSelectorQuery, IDSelectorQuery, NameSelectorQuery, TagSelectorQuery, ClassSelectorQuery,
