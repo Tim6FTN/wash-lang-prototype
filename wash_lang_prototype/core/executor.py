@@ -1,4 +1,3 @@
-import json
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 from textx import textx_isinstance
@@ -34,24 +33,6 @@ def create_executor_instance(script: str, options: WashOptions, metamodel: TextX
 
     return selected_executor(**dict(kwargs, script=script, options=options,
                                     metamodel=metamodel, model=model, debug=debug))
-
-
-class ExecutionResult:
-    def __init__(self, parent, **kwargs):
-        self.parent = parent
-        self.add_attribute(**kwargs)
-
-    def __repr__(self):
-        d = self.__dict__.copy()
-        d.pop('parent')
-        return str(d)
-
-    def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-    def add_attribute(self, **kwargs):
-        for k, i in kwargs.items():
-            setattr(self, k, i)
 
 
 class WashExecutor:
@@ -105,7 +86,7 @@ class WashExecutor:
         else:
             raise WashError('Unexpected object "{}" of type "{}"'.format(open_statement, type(open_statement)))
             
-    def __execute_internal(self, webdriver_instance: WebDriver) -> dict[str, Any]:
+    def __execute_internal(self, webdriver_instance: WebDriver) -> ExecutionResult:
         
         queries = self.__model.root_expression.queries
         context_expression = self.__model.root_expression.context_expression
@@ -114,7 +95,7 @@ class WashExecutor:
         root_context = self.__prepare_context(webdriver_instance, queries)
 
         result = self.__execute_context_expression(root_context, context_expression)
-        self.__model.execution_result[result_key] = result
+        self.__model.execution_result.add_attribute(**{result_key: result})
 
         return self.__model.execution_result
 
