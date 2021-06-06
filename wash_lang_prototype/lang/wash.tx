@@ -76,6 +76,7 @@ SelectorQuery:
     IDSelectorQuery |
     NameSelectorQuery |
     TagSelectorQuery |
+    ClassSelectorQuery |
     CSSSelectorQuery | 
     XPathSelectorQuery
 ;
@@ -84,6 +85,7 @@ IndexSelectorQuery: '?i' query_value=QueryValue;
 IDSelectorQuery: '?id' query_value=QueryValue;
 NameSelectorQuery: '?n' query_value=QueryValue;
 TagSelectorQuery: '?t' query_value=QueryValue;
+ClassSelectorQuery: '?cl' query_value=QueryValue;
 CSSSelectorQuery: '?c' query_value=QueryValue;
 XPathSelectorQuery: '?x' query_value=QueryValue;
 
