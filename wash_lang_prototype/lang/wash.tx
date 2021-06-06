@@ -61,26 +61,24 @@ PrimitiveValue:
 
 ArrayValue:
     '[' value+=STRING[','] ']' | '[' value+=STRICTFLOAT[','] ']' | '[' value+=INT[','] ']' | '[' value+=BOOL[','] ']'
+;
 
 Expression:
     queries+=Query (context_expression=ContextExpression)? '->' result_key=ID            // TODO: Result key optional
 ;
 
 Query:
-    CSSSelectorQuery | XPathSelectorQuery | DataQuery
+    SelectorQuery | DataQuery
 ;
 
-CSSSelectorQuery:
-    '?c' query_value=QueryValue
+SelectorQuery:
+    CSSSelectorQuery | XPathSelectorQuery
 ;
 
-XPathSelectorQuery:
-    '?x' query_value=QueryValue
-;
+CSSSelectorQuery: '?c' query_value=QueryValue;
+XPathSelectorQuery: '?x' query_value=QueryValue;
 
-DataQuery:
-    ':' query_value=QueryValue
-;
+DataQuery: ':' query_value=QueryValue;
 
 QueryValue:
 /*
