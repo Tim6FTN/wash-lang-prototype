@@ -1,5 +1,15 @@
 
 
+class WashScript:
+    def __init__(self, configuration_definitions, import_statements, configuration, open_statement, root_expression):
+        self.configuration_definitions = configuration_definitions
+        self.import_statements = import_statements
+        self.configuration = configuration
+        self.open_statement = open_statement
+        self.root_expression = root_expression
+        self.execution_result = {}
+
+
 class OpenStatement:
     def __init__(self, parent):
         self.parent = parent
