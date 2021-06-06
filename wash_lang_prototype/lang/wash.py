@@ -1,5 +1,15 @@
 
 
+class WashScript:
+    def __init__(self, configuration_definitions, import_statements, configuration, open_statement, root_expression):
+        self.configuration_definitions = configuration_definitions
+        self.import_statements = import_statements
+        self.configuration = configuration
+        self.open_statement = open_statement
+        self.root_expression = root_expression
+        self.execution_result = {}
+
+
 class OpenStatement:
     def __init__(self, parent):
         self.parent = parent
@@ -38,16 +48,63 @@ class Query:
         self.query_value = query_value
 
 
-class CSSSelectorQuery(Query):
+class SelectorQuery(Query):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
-        self.execution_result = None
+
+    def execute(self, execution_context):
+        return self._execute(execution_context)
+
+    def _execute(self, execution_context):
+        raise NotImplementedError()
 
 
-class XPathSelectorQuery(Query):
+class IDSelectorQuery(SelectorQuery):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
-        self.execution_result = None
+
+    def _execute(self, execution_context):
+        return execution_context.find_element_by_id(self.query_value.value)
+
+
+class NameSelectorQuery(SelectorQuery):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+
+    def _execute(self, execution_context):
+        return execution_context.find_elements_by_name(self.query_value.value)
+
+
+class TagSelectorQuery(SelectorQuery):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+
+    def _execute(self, execution_context):
+        return execution_context.find_elements_by_tag_name(self.query_value.value)
+
+
+class ClassSelectorQuery(SelectorQuery):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+
+    def _execute(self, execution_context):
+        return execution_context.find_elements_by_class_name(self.query_value.value)
+
+
+class CSSSelectorQuery(SelectorQuery):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+
+    def _execute(self, execution_context):
+        return execution_context.find_elements_by_css_selector(self.query_value.value)
+
+
+class XPathSelectorQuery(SelectorQuery):
+    def __init__(self, parent, query_value):
+        super().__init__(parent, query_value)
+
+    def _execute(self, execution_context):
+        return execution_context.find_elements_by_xpath(self.query_value.value)
 
 
 class DataQuery(Query):
@@ -70,8 +127,11 @@ class ContextExpression:
 
 
 wash_classes = [
+    WashScript,
     OpenURLStatement, OpenFileStatement, OpenStringStatement,
     Expression, ContextExpression, 
-    CSSSelectorQuery, XPathSelectorQuery, DataQuery,
+    IDSelectorQuery, NameSelectorQuery, TagSelectorQuery, ClassSelectorQuery,
+    CSSSelectorQuery, XPathSelectorQuery, 
+    DataQuery,
     QueryValue
 ]
