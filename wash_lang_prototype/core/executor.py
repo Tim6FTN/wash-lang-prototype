@@ -1,49 +1,56 @@
+from __future__ import annotations
+
+import os
+
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
 from textx import textx_isinstance
 from textx.metamodel import TextXMetaModel
 
-from wash_lang_prototype.core.exceptions import WashError
 from wash_lang_prototype.core.options import WashOptions
 from wash_lang_prototype.lang.wash import *
 
 
 def create_executor_instance(script: str, options: WashOptions, metamodel: TextXMetaModel,
-                             model, debug=False, **kwargs):
+                             model: WashScript, debug=False, **kwargs):
 
     # TODO (fivkovic): Handle case when no configuration is specified to use default one?
 
-    browser_type_configuration_entry = next(item for item in model.configuration.configuration_entries
-                                            if item.type.name == 'browser_type')
-    browser = next(parameter.value.value for parameter in browser_type_configuration_entry.parameters
-                   if parameter.parameter.name == 'browser_type')
+    from wash_lang_prototype.core.configuration_handler import ChromeHandler, FirefoxHandler, EdgeHandler, OperaHandler
+    chrome_handler = ChromeHandler()
+    firefox_handler = FirefoxHandler()
+    edge_handler = EdgeHandler()
+    opera_handler = OperaHandler()
 
-    if browser == 'Chrome':
-        selected_executor = ChromeExecutor
-    elif browser == 'Firefox':
-        selected_executor = FirefoxExecutor
-    elif browser == 'Edge':
-        selected_executor = EdgeExecutor
-    elif browser == 'Opera':
-        selected_executor = OperaExecutor
-    elif browser == 'Safari':
-        selected_executor = SafariExecutor
-    else:
-        raise WashError('Unsupported browser type "{}"'.format(browser))
+    chrome_handler.set_next(firefox_handler).set_next(edge_handler).set_next(opera_handler)
 
-    return selected_executor(**dict(kwargs, script=script, options=options,
-                                    metamodel=metamodel, model=model, debug=debug))
+    configuration_handler = chrome_handler
+    selected_executor, browser_options = configuration_handler.handle(model.configuration)
+
+    # TODO (fivkovic): Handle case when no configuration is specified to use default one?
+
+    return selected_executor(browser_options=browser_options,
+                             **dict(kwargs, script=script, options=options,
+                             metamodel=metamodel, model=model, debug=debug))
 
 
 class WashExecutor:
+    """
+    Main class that handles execution logic of WASH scripts.
+    """
+
     def __init__(self, **kwargs):
         self._options = kwargs.pop('options')           # type: WashOptions
         self.__script = kwargs.pop('script')            # type: str
         self.__metamodel = kwargs.pop('metamodel')      # type: TextXMetaModel
-        self.__model = kwargs.pop('model')
+        self.__model = kwargs.pop('model')              # type: WashScript
         self.__debug = kwargs.pop('debug')              # type: bool
 
     def execute(self) -> ExecutionResult:
+        """
+        Executes a WASH script and returns an ExecutionResult instance.
+        """
         document_location = self.__extract_document_location(self.__model.open_statement)
         webdriver_instance = self._start_webdriver_instance(url=document_location)
         
@@ -55,16 +62,23 @@ class WashExecutor:
             current_url=webdriver_instance.current_url,
             execution_result=execution_result)
         
-        if self.__debug:
-            wash_result.add_attribute(**{'script': self.__script})
         webdriver_instance.quit()
+
+        if self.__debug:
+            wash_result.add_attributes(**{'script': self.__script})
         
         return wash_result
 
     def _start_webdriver_instance(self, url: str) -> WebDriver:
+        """
+        Starts a new webdriver instance on the given URL.
+        
+        Args:
+            url(str): URL of the page the webdriver instance should load.
+        """
         pass
 
-    def _is(self, object_instance, rule_class):
+    def __is(self, object_instance, rule_class):
         """
         Determines whether a WASH object is an instance of a specific WASH class supported by the metamodel.
         
@@ -77,11 +91,18 @@ class WashExecutor:
         return textx_isinstance(object_instance, self.__metamodel[rule_class])
 
     def __extract_document_location(self, open_statement):
-        if self._is(open_statement, OpenURLStatement.__name__):
+        """
+        Extracts the location value of the document that should be used for execution,
+        and returns it in a format acceptable by the WebDriver class.
+        
+        Args:
+            open_statement: Statement from the parsed model that contains location value for opening a HTML file.
+        """
+        if self.__is(open_statement, OpenURLStatement.__name__):
             return open_statement.url
-        elif self._is(open_statement, OpenFileStatement.__name__):
+        elif self.__is(open_statement, OpenFileStatement.__name__):
             return 'file:///' + open_statement.file_path
-        elif self._is(open_statement, OpenStringStatement.__name__):
+        elif self.__is(open_statement, OpenStringStatement.__name__):
             return 'data:text/html;charset=utf-8,' + open_statement.html
         else:
             raise WashError('Unexpected object "{}" of type "{}"'.format(open_statement, type(open_statement)))
@@ -95,7 +116,7 @@ class WashExecutor:
         root_context = self.__prepare_context(webdriver_instance, queries)
 
         result = self.__execute_context_expression(root_context, context_expression)
-        self.__model.execution_result.add_attribute(**{result_key: result})
+        self.__model.execution_result.add_attributes(**{result_key: result})
 
         return self.__model.execution_result
 
@@ -123,7 +144,7 @@ class WashExecutor:
                         else:
                             expression_result = query.execute(execution_context=context_item)
 
-                context_item_execution_result.add_attribute(**{expression_result_key: expression_result})
+                context_item_execution_result.add_attributes(**{expression_result_key: expression_result})
             execution_result.append(context_item_execution_result)
 
         if len(execution_result) == 1:
@@ -146,16 +167,11 @@ class ChromeExecutor(WashExecutor):
     """
     WASH script executor that uses Chrome browser.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, browser_options, **kwargs):
         super(ChromeExecutor, self).__init__(**kwargs)
+        self.__chrome_options = browser_options
 
     def _start_webdriver_instance(self, url: str):
-        from selenium.webdriver import ChromeOptions
-
-        options = ChromeOptions()
-        options.headless = True
-        options.add_argument("--window-size=1920,1080")
-
         if not self._options.chrome_webdriver_path:
             raise WashError('Current WASH configuration uses Chrome WebDriver,'
                             ' but the path was not specified in options.')
@@ -163,7 +179,8 @@ class ChromeExecutor(WashExecutor):
             raise FileNotFoundError('Unable to find Chrome WebDriver on specified path: "{}"'
                                     .format(self._options.chrome_webdriver_path))
 
-        webdriver_instance = webdriver.Chrome(options=options, executable_path=self._options.chrome_webdriver_path)
+        webdriver_instance = webdriver.Chrome(options=self.__chrome_options,
+                                              executable_path=self._options.chrome_webdriver_path)
         webdriver_instance.get(url)
 
         return webdriver_instance
@@ -173,16 +190,11 @@ class FirefoxExecutor(WashExecutor):
     """
     WASH script executor that uses Firefox browser.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, browser_options, **kwargs):
         super(FirefoxExecutor, self).__init__(**kwargs)
+        self.__firefox_options = browser_options
 
     def _start_webdriver_instance(self, url: str):
-        from selenium.webdriver import FirefoxOptions
-
-        options = FirefoxOptions()
-        options.headless = True
-        options.add_argument("--window-size=1920,1080")
-
         if not self._options.firefox_webdriver_path:
             raise WashError('Current WASH configuration uses Firefox WebDriver,'
                             ' but the path was not specified in options.')
@@ -190,7 +202,8 @@ class FirefoxExecutor(WashExecutor):
             raise FileNotFoundError('Unable to find Firefox WebDriver on specified path: "{}"'
                                     .format(self._options.firefox_webdriver_path))
 
-        webdriver_instance = webdriver.Firefox(options=options, executable_path=self._options.firefox_webdriver_path)
+        webdriver_instance = webdriver.Firefox(options=self.__firefox_options,
+                                               executable_path=self._options.firefox_webdriver_path)
         webdriver_instance.get(url)
 
         return webdriver_instance
@@ -200,8 +213,9 @@ class EdgeExecutor(WashExecutor):
     """
     WASH script executor that uses Edge browser.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, browser_options, **kwargs):
         super(EdgeExecutor, self).__init__(**kwargs)
+        self.__edge_options = browser_options
 
     def _start_webdriver_instance(self, url: str):
 
@@ -225,16 +239,11 @@ class OperaExecutor(WashExecutor):
     """
     WASH script executor that uses Opera browser.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, browser_options, **kwargs):
         super(OperaExecutor, self).__init__(**kwargs)
+        self.__opera_options = browser_options
 
     def _start_webdriver_instance(self, url: str):
-        from selenium.webdriver.opera.options import Options
-
-        options = Options()
-        options.headless = True
-        options.add_argument("--window-size=1920,1080")
-
         if not self._options.opera_webdriver_path:
             raise WashError('Current WASH configuration uses Opera WebDriver,'
                             ' but the path was not specified in options.')
@@ -242,7 +251,8 @@ class OperaExecutor(WashExecutor):
             raise FileNotFoundError('Unable to find Opera WebDriver on specified path: "{}"'
                                     .format(self._options.opera_webdriver_path))
 
-        webdriver_instance = webdriver.Opera(options=options, executable_path=self._options.opera_webdriver_path)
+        webdriver_instance = webdriver.Opera(options=self.__opera_options,
+                                             executable_path=self._options.opera_webdriver_path)
         webdriver_instance.get(url)
 
         return webdriver_instance
@@ -252,8 +262,9 @@ class SafariExecutor(WashExecutor):
     """
     WASH script executor that uses Safari browser.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, browser_options, **kwargs):
         super(SafariExecutor, self).__init__(**kwargs)
+        self.__safari_options = browser_options
 
     def _start_webdriver_instance(self, url: str):
 
