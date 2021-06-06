@@ -58,10 +58,10 @@ class Query:
             return self._execute(execution_context)
 
     def _execute(self, execution_context):
-        raise NotImplementedError("Calling this method from base class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
     def _execute_and_flatten(self, execution_context: list):
-        raise NotImplementedError("Calling this method from base class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
 
 class SelectorQuery(Query):
@@ -84,13 +84,13 @@ class SelectorQuery(Query):
         return True
 
     def _execute(self, execution_context):
-        raise NotImplementedError("Calling this method from parent class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
     def _execute_and_flatten(self, execution_context):
-        raise NotImplementedError("Calling this method from parent class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
     def _execute_selector(self, execution_context):
-        raise NotImplementedError("Calling this method from parent class is not allowed.")
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
 
 class IndexSelectorQuery(SelectorQuery):
