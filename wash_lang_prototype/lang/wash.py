@@ -130,6 +130,8 @@ wash_classes = [
     WashScript,
     OpenURLStatement, OpenFileStatement, OpenStringStatement,
     Expression, ContextExpression, 
-    CSSSelectorQuery, XPathSelectorQuery, DataQuery,
+    IDSelectorQuery, NameSelectorQuery, TagSelectorQuery, ClassSelectorQuery,
+    CSSSelectorQuery, XPathSelectorQuery, 
+    DataQuery,
     QueryValue
 ]
