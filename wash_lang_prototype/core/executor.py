@@ -11,11 +11,28 @@ from wash_lang_prototype.lang.wash import *
 def create_executor_instance(script: str, options: WashOptions, metamodel: TextXMetaModel,
                              model, debug=False, **kwargs):
 
-    # TODO (fivkovic): Create executor based on current configuration.
-    # Current configuration set in WASH script should contain what browser is to be used.
+    # TODO (fivkovic): Handle case when no configuration is specified to use default one?
 
-    return ChromeExecutor(**dict(kwargs, script=script, options=options,
-                                 metamodel=metamodel, model=model, debug=debug))
+    browser_type_configuration_entry = next(item for item in model.configuration.configuration_entries
+                                            if item.type.name == 'browser_type')
+    browser = next(parameter.value.value for parameter in browser_type_configuration_entry.parameters
+                   if parameter.parameter.name == 'browser_type')
+
+    if browser == 'Chrome':
+        selected_executor = ChromeExecutor
+    elif browser == 'Firefox':
+        selected_executor = FirefoxExecutor
+    elif browser == 'Edge':
+        selected_executor = EdgeExecutor
+    elif browser == 'Opera':
+        selected_executor = OperaExecutor
+    elif browser == 'Safari':
+        selected_executor = SafariExecutor
+    else:
+        raise WashError('Unsupported browser type "{}"'.format(browser))
+
+    return selected_executor(**dict(kwargs, script=script, options=options,
+                                    metamodel=metamodel, model=model, debug=debug))
 
 
 class ExecutionResult:
