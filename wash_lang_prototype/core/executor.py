@@ -105,15 +105,20 @@ class WashExecutor:
             raise WashError('Unexpected object "{}" of type "{}"'.format(open_statement, type(open_statement)))
             
     def __execute_internal(self, webdriver_instance: WebDriver) -> ExecutionResult:
-        
-        queries = self.__model.root_expression.queries
-        context_expression = self.__model.root_expression.context_expression
-        result_key = self.__model.root_expression.result_key
+        for expression in self.__model.expressions:
+            if self.__is(expression, DynamicExpression.__name__):
+                expression.execute(webdriver_instance)
+            elif self.__is(expression, StaticExpression.__name__):
+                queries = expression.queries
+                context_expression = expression.context_expression
+                result_key = expression.result_key
 
-        root_context = self.__prepare_context(webdriver_instance, queries)
+                root_context = self.__prepare_context(webdriver_instance, queries)
 
-        result = self.__execute_context_expression(root_context, context_expression)
-        self.__model.execution_result.add_attributes(**{result_key: result})
+                result = self.__execute_context_expression(root_context, context_expression)
+                self.__model.execution_result[result_key] = result
+            else:
+                raise WashError(f'Unsupported expression type: {expression.__class__}')
 
         return self.__model.execution_result
 
