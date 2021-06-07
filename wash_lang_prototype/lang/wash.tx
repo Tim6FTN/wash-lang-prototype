@@ -113,7 +113,9 @@ ContextExpression:
 ;
 
 DynamicExpression:
-    MouseEventCommand | ScriptExecutionCommand
+    MouseEventCommand | 
+    ScriptExecutionCommand | 
+    KeyboardEventCommand | 
 ;
 
 MouseEventCommand:
@@ -122,6 +124,10 @@ MouseEventCommand:
 
 ScriptExecutionCommand:
     'execute script' script=STRING
+;
+
+KeyboardEventCommand:
+    'type' value=STRING ('into' element_selector_queries+=SelectorQuery)?
 ;
 
 Comment:
