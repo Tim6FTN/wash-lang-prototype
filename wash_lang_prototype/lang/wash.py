@@ -322,6 +322,34 @@ class ScriptExecutionCommand(DynamicExpression):
         execution_context.execute_script(self.script)
 
 
+class KeyboardEventCommand(DynamicExpression):
+    def __init__(self, parent, value, element_selector_queries=None):
+        super().__init__(parent)
+        self.value = value
+        self.element_selector_queries = element_selector_queries
+
+    def execute(self, execution_context):
+        if not self.element_selector_queries:
+            from selenium.webdriver.common.action_chains import ActionChains
+            actions = ActionChains(execution_context)
+            actions.send_keys(self.value)
+            actions.perform()
+        else:
+            element = self.__get_element(execution_context)
+            element = element[0] if isinstance(element, list) else element
+            element.clear()
+            element.send_keys(self.value)
+
+    def __get_element(self, execution_context):
+        query_result = None
+        for query in self.element_selector_queries:
+            if not query_result:
+                query_result = query.execute(execution_context=execution_context)
+            else:
+                query_result = query.execute(query_result)
+        return query_result
+
+
 wash_classes = [
     WashScript,
     Configuration, ConfigurationEntry, ConfigurationParameterValue,
@@ -331,5 +359,5 @@ wash_classes = [
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
     QueryValue,
-    MouseEventCommand, ScriptExecutionCommand
+    MouseEventCommand, ScriptExecutionCommand, KeyboardEventCommand
 ]
