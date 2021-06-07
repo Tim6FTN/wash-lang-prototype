@@ -293,6 +293,35 @@ class DynamicExpression:
         self.parent = parent
 
 
+class MouseEventCommand(DynamicExpression):
+    def __init__(self, parent, element_selector_queries):
+        super().__init__(parent)
+        self.element_selector_queries = element_selector_queries
+
+    def execute(self, execution_context):
+        element = self.__get_element(execution_context)
+        element = element[0] if isinstance(element, list) else element
+        element.click()
+
+    def __get_element(self, execution_context):
+        query_result = None
+        for query in self.element_selector_queries:
+            if not query_result:
+                query_result = query.execute(execution_context=execution_context)
+            else:
+                query_result = query.execute(query_result)
+        return query_result
+
+
+class ScriptExecutionCommand(DynamicExpression):
+    def __init__(self, parent, script):
+        super().__init__(parent)
+        self.script = script
+
+    def execute(self, execution_context):
+        execution_context.execute_script(self.script)
+
+
 wash_classes = [
     WashScript,
     Configuration, ConfigurationEntry, ConfigurationParameterValue,
@@ -301,5 +330,6 @@ wash_classes = [
     IndexSelectorQuery, IDSelectorQuery, NameSelectorQuery, TagSelectorQuery, ClassSelectorQuery,
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
-    QueryValue
+    QueryValue,
+    MouseEventCommand, ScriptExecutionCommand
 ]

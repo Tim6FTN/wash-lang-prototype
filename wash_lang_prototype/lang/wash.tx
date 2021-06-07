@@ -113,7 +113,15 @@ ContextExpression:
 ;
 
 DynamicExpression:
-    'dummy keyword' value=STRING
+    MouseEventCommand | ScriptExecutionCommand
+;
+
+MouseEventCommand:
+    'click on' element_selector_queries+=SelectorQuery
+;
+
+ScriptExecutionCommand:
+    'execute script' script=STRING
 ;
 
 Comment:
