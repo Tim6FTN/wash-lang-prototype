@@ -350,6 +350,26 @@ class KeyboardEventCommand(DynamicExpression):
         return query_result
 
 
+class SleepCommand(DynamicExpression):
+    def __init__(self, parent, value):
+        super().__init__(parent)
+        self.value = value
+
+    def execute(self, _):
+        time.sleep(self.value)
+
+
+class ExplicitWaitCommand:
+    def __init__(self, parent, selector_query, rule, timeout_value=None):
+        self.parent = parent
+        self.selector_query = selector_query
+        self.rule = rule
+        self.timeout_value = timeout_value
+
+    def execute(self, execution_context):
+        pass        # TODO: Implement
+
+
 wash_classes = [
     WashScript,
     Configuration, ConfigurationEntry, ConfigurationParameterValue,
@@ -359,5 +379,5 @@ wash_classes = [
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
     QueryValue,
-    MouseEventCommand, ScriptExecutionCommand, KeyboardEventCommand
+    MouseEventCommand, ScriptExecutionCommand, KeyboardEventCommand, SleepCommand, ExplicitWaitCommand
 ]
