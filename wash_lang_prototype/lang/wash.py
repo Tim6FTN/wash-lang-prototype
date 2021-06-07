@@ -1,46 +1,53 @@
 import itertools
-import json
 import re
 
-
-class ExecutionResult:
-    def __init__(self, parent=None, **kwargs):
-        self.parent = parent
-        self.add_attribute(**kwargs)
-
-    def __repr__(self):
-        d = self.__dict__.copy()
-        d.pop('parent')
-        return str(d)
-
-    def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-
-    def add_attribute(self, **kwargs):
-        for k, i in kwargs.items():
-            if hasattr(self, k):
-                attribute = getattr(self, k)
-                if isinstance(attribute, ExecutionResult):
-                    x = {y: i.__dict__[y] for y in i.__dict__ if y != 'parent'}
-                    attribute.add_attribute(**x)
-                elif isinstance(attribute, list):
-                    for new_item, existing_item in zip(i, attribute):
-                        x = {i: new_item.__dict__[i] for i in new_item.__dict__ if i != 'parent'}
-                        existing_item.add_attribute(**x)
-                else:
-                    attribute = i
-            else:
-                setattr(self, k, i)
+from wash_lang_prototype.core.exceptions import WashError
+from wash_lang_prototype.core.result import ExecutionResult
 
 
-class WashScript:
-    def __init__(self, configuration_definitions, import_statements, configuration, open_statement, expressions):
-        self.configuration_definitions = configuration_definitions
-        self.import_statements = import_statements
-        self.configuration = configuration
-        self.open_statement = open_statement
-        self.expressions = expressions
+class WashBase:
+    """
+    Represents the base class for all custom classes used during the meta-model instantiation.
+    """
+    def __init__(self, *args, **kwargs):
+        if args:
+            self.parent = args[0]
+        for key, item in kwargs.items():
+            setattr(self, key, item)
+        super().__init__()
+
+    # TODO (fivkovic): Scope, Context
+
+
+class WashScript(WashBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.execution_result = ExecutionResult()
+
+
+class Configuration(WashBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.__is_valid():
+            raise WashError('Configuration invalid: not all required parameters were specified.')
+
+    # noinspection PyUnresolvedReferences
+    def __is_valid(self):
+        for e in self.configuration_entries:
+            required_parameters = [p for p in e.type.parameters if p.required]
+            if len(required_parameters) != len(e.parameters):
+                return False
+        return True
+
+
+class ConfigurationEntry(WashBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class ConfigurationParameterValue(WashBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class OpenStatement:
@@ -66,7 +73,7 @@ class OpenStringStatement(OpenStatement):
         self.html = html
 
 
-class Expression:
+class StaticExpression:
     def __init__(self, parent, queries, context_expression, result_key):
         self.parent = parent
         self.queries = queries
@@ -281,12 +288,48 @@ class ContextExpression:
         self.execution_result = None
 
 
+class DynamicExpression:
+    def __init__(self, parent):
+        self.parent = parent
+
+
+class MouseEventCommand(DynamicExpression):
+    def __init__(self, parent, element_selector_queries):
+        super().__init__(parent)
+        self.element_selector_queries = element_selector_queries
+
+    def execute(self, execution_context):
+        element = self.__get_element(execution_context)
+        element = element[0] if isinstance(element, list) else element
+        element.click()
+
+    def __get_element(self, execution_context):
+        query_result = None
+        for query in self.element_selector_queries:
+            if not query_result:
+                query_result = query.execute(execution_context=execution_context)
+            else:
+                query_result = query.execute(query_result)
+        return query_result
+
+
+class ScriptExecutionCommand(DynamicExpression):
+    def __init__(self, parent, script):
+        super().__init__(parent)
+        self.script = script
+
+    def execute(self, execution_context):
+        execution_context.execute_script(self.script)
+
+
 wash_classes = [
     WashScript,
+    Configuration, ConfigurationEntry, ConfigurationParameterValue,
     OpenURLStatement, OpenFileStatement, OpenStringStatement,
-    Expression, ContextExpression, 
+    StaticExpression, ContextExpression, 
     IndexSelectorQuery, IDSelectorQuery, NameSelectorQuery, TagSelectorQuery, ClassSelectorQuery,
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
-    QueryValue
+    QueryValue,
+    MouseEventCommand, ScriptExecutionCommand
 ]

@@ -17,4 +17,7 @@ define configuration custom_chrome_configuration {
         width: 1920
         height: 1080
     }
+    option wait_timeout {
+        timeout: 10
+    }
 }

@@ -64,6 +64,10 @@ ArrayValue:
 ;
 
 Expression:
+    StaticExpression | DynamicExpression
+;
+
+StaticExpression:
     queries+=Query (context_expression=ContextExpression)? '->' result_key=ID            // TODO: Result key optional
 ;
 
@@ -105,7 +109,19 @@ QueryValue:
 ;
 
 ContextExpression:
-    '{' expressions+=Expression '}'
+    '{' expressions+=StaticExpression '}'
+;
+
+DynamicExpression:
+    MouseEventCommand | ScriptExecutionCommand
+;
+
+MouseEventCommand:
+    'click on' element_selector_queries+=SelectorQuery
+;
+
+ScriptExecutionCommand:
+    'execute script' script=STRING
 ;
 
 Comment:
