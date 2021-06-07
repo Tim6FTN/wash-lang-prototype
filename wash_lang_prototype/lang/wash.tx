@@ -118,7 +118,8 @@ DynamicExpression:
     KeyboardEventCommand | 
     WaitCommand | 
     SleepCommand | 
-    ExplicitWaitCommand
+    ExplicitWaitCommand |
+    NavigationCommand
 ;
 
 MouseEventCommand:
@@ -152,6 +153,10 @@ ExplicitWaitCommandRule:
 ;
 
 TimeoutValue: STRICTFLOAT | INT;
+
+NavigationCommand:
+    'go to' url=STRING
+;
 
 Comment:
   /\*\*.*$/

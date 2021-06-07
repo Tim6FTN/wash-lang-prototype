@@ -371,6 +371,16 @@ class ExplicitWaitCommand(DynamicExpression):
         pass        # TODO: Implement
 
 
+class NavigationCommand(DynamicExpression):
+    def __init__(self, parent, url):
+        super().__init__(parent)
+        self.url = url
+
+    def execute(self, execution_context):
+        # TODO: Raise exception if not a web driver instance
+        execution_context.get(self.url)
+
+
 wash_classes = [
     WashScript,
     Configuration, ConfigurationEntry, ConfigurationParameterValue,
@@ -380,5 +390,5 @@ wash_classes = [
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
     QueryValue,
-    MouseEventCommand, ScriptExecutionCommand, KeyboardEventCommand, SleepCommand, ExplicitWaitCommand
+    MouseEventCommand, ScriptExecutionCommand, KeyboardEventCommand, SleepCommand, ExplicitWaitCommand, NavigationCommand
 ]
