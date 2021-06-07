@@ -359,8 +359,9 @@ class SleepCommand(DynamicExpression):
         time.sleep(self.value)
 
 
-class ExplicitWaitCommand:
+class ExplicitWaitCommand(DynamicExpression):
     def __init__(self, parent, selector_query, rule, timeout_value=None):
+        super().__init__(parent)
         self.parent = parent
         self.selector_query = selector_query
         self.rule = rule
