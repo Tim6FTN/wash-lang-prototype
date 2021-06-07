@@ -64,6 +64,10 @@ ArrayValue:
 ;
 
 Expression:
+    StaticExpression | DynamicExpression
+;
+
+StaticExpression:
     queries+=Query (context_expression=ContextExpression)? '->' result_key=ID            // TODO: Result key optional
 ;
 
@@ -105,7 +109,11 @@ QueryValue:
 ;
 
 ContextExpression:
-    '{' expressions+=Expression '}'
+    '{' expressions+=StaticExpression '}'
+;
+
+DynamicExpression:
+    'dummy keyword' value=STRING
 ;
 
 Comment:

@@ -73,7 +73,7 @@ class OpenStringStatement(OpenStatement):
         self.html = html
 
 
-class Expression:
+class StaticExpression:
     def __init__(self, parent, queries, context_expression, result_key):
         self.parent = parent
         self.queries = queries
@@ -288,11 +288,16 @@ class ContextExpression:
         self.execution_result = None
 
 
+class DynamicExpression:
+    def __init__(self, parent):
+        self.parent = parent
+
+
 wash_classes = [
     WashScript,
     Configuration, ConfigurationEntry, ConfigurationParameterValue,
     OpenURLStatement, OpenFileStatement, OpenStringStatement,
-    Expression, ContextExpression, 
+    StaticExpression, ContextExpression, 
     IndexSelectorQuery, IDSelectorQuery, NameSelectorQuery, TagSelectorQuery, ClassSelectorQuery,
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
