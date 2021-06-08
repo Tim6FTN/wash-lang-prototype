@@ -113,13 +113,11 @@ ContextExpression:
 ;
 
 DynamicExpression:
-    MouseEventCommand | 
-    ScriptExecutionCommand | 
-    KeyboardEventCommand | 
-    WaitCommand | 
-    SleepCommand | 
-    ExplicitWaitCommand |
-    NavigationCommand
+        MouseEventCommand | 
+        ScriptExecutionCommand | 
+        KeyboardEventCommand | 
+        WaitCommand | 
+        NavigationCommand
 ;
 
 MouseEventCommand:

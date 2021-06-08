@@ -116,7 +116,7 @@ class WashExecutor:
                 root_context = self.__prepare_context(webdriver_instance, queries)
 
                 result = self.__execute_context_expression(root_context, context_expression)
-                self.__model.execution_result[result_key] = result
+                self.__model.execution_result.add_attributes(**{result_key: result})
             else:
                 raise WashError(f'Unsupported expression type: {expression.__class__}')
 
