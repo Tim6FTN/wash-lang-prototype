@@ -60,7 +60,7 @@ PrimitiveValue:
 ;
 
 ArrayValue:
-    '[' value+=STRING[','] ']' | '[' value+=STRICTFLOAT[','] ']' | '[' value+=INT[','] ']' | '[' value+=BOOL[','] ']'
+    '[' value+=PrimitiveValue[','] ']'
 ;
 
 Expression:
