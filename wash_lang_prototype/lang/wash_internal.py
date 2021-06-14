@@ -1,24 +1,31 @@
+from abc import ABC
 
 
-class ConfigurationOptions:
-    def __init__(self, configuration_options):
-        self.configuration_options = configuration_options
+class WashInternalBase(ABC):
+    """
+    Represents the base class for all custom classes used during the internal meta-model instantiation.
+    """
+    def __init__(self, *args, **kwargs):
+        if args:
+            self.parent = args[0]
+        for key, item in kwargs.items():
+            setattr(self, key, item)
+        super().__init__()
 
 
-class ConfigurationOption:
-    def __init__(self, parent, name, description, parameters):
-        self.parent = parent
-        self.name = name
-        self.description = description
-        self.parameters = parameters
+class ConfigurationOptions(WashInternalBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
-class ConfigurationOptionParameter:
-    def __init__(self, parent, required, parameter_type, name):
-        self.parent = parent
-        self.required = required
-        self.parameter_type = parameter_type
-        self.name = name
+class ConfigurationOption(WashInternalBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class ConfigurationOptionParameter(WashInternalBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 internal_classes = [

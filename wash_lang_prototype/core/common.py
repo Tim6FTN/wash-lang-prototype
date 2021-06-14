@@ -15,6 +15,7 @@ class Handler(ABC):
     def set_next(self, handler: Handler) -> Handler:
         """
         Sets the next handler in the chain.
+
         Args:
             handler(Handler): The next handler in the chain.
         """
@@ -25,6 +26,7 @@ class Handler(ABC):
         """
         Handles the given request by executing the chain of registered handlers.
         All concrete Handlers either handle the request or pass it to the next handler in the chain.
+
         Args:
             request: The request to be handled by the chain.
         """
