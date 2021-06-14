@@ -4,10 +4,8 @@ from abc import abstractmethod
 from typing import Any, Type
 
 from wash_lang_prototype.core.common import Handler
-from wash_lang_prototype.core.configuration_entry_handler import get_browser_type, get_user_agent, \
-    get_access_as_mobile_device, get_use_incognito_mode, get_window_size, get_wait_timeout
 from wash_lang_prototype.core.exceptions import WashError
-from wash_lang_prototype.core.executor import ChromeExecutor, FirefoxExecutor, EdgeExecutor, OperaExecutor
+from wash_lang_prototype.core.executor import WashExecutor, ChromeExecutor, FirefoxExecutor, EdgeExecutor, OperaExecutor
 from wash_lang_prototype.lang.wash import Configuration
 
 
@@ -18,21 +16,21 @@ class ConfigurationHandlingResult:
     and other parameters specified through WASH configuration that must directly be set on the
     web driver instance (instead of using browser options).
     """
-    def __init__(self, executor_type: Type, browser_options: Any, implicit_wait_value: int):
-        self.__executor_type = executor_type
-        self.__browser_options = browser_options
-        self.__implicit_wait_value = implicit_wait_value
+    def __init__(self, executor_type: Type[WashExecutor], browser_options: Any, implicit_wait_value: int):
+        self.__executor_type = executor_type                # type: Type[WashExecutor]
+        self.__browser_options = browser_options            # type: Any
+        self.__implicit_wait_value = implicit_wait_value    # type: int
 
     @property
-    def executor_type(self):
+    def executor_type(self) -> Type[WashExecutor]:
         return self.__executor_type
 
     @property
-    def browser_options(self):
+    def browser_options(self) -> Any:
         return self.__browser_options
 
     @property
-    def implicit_wait_value(self):
+    def implicit_wait_value(self) -> int:
         return self.__implicit_wait_value
 
 
@@ -67,7 +65,7 @@ class ConfigurationHandler(Handler):
 
     @classmethod
     def _extract_browser_type(cls, configuration: Configuration) -> str:
-        return get_browser_type(configuration)
+        return configuration.get_browser_type()
 
     @abstractmethod
     def _create_options(self, configuration: Configuration):
@@ -81,23 +79,24 @@ class ChromeConfigurationHandler(ConfigurationHandler):
 
     def handle(self, configuration: Configuration) -> ConfigurationHandlingResult:
         browser_type = self._extract_browser_type(configuration)
-        if browser_type != "Chrome":
+        if browser_type.casefold() != "chrome":
             return super().handle(configuration)
         return ConfigurationHandlingResult(
             executor_type=ChromeExecutor,
             browser_options=self._create_options(configuration),
-            implicit_wait_value=get_wait_timeout(configuration))
+            implicit_wait_value=configuration.get_wait_timeout())
 
     def _create_options(self, configuration: Configuration):
         from selenium.webdriver import ChromeOptions
 
         options = ChromeOptions()
-        options.headless = True
+        options.headless = False
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
-        user_agent = get_user_agent(configuration)
-        access_as_mobile_device = get_access_as_mobile_device(configuration)
-        use_incognito_mode = get_use_incognito_mode(configuration)
-        window_size = get_window_size(configuration)
+        user_agent = configuration.get_user_agent()
+        access_as_mobile_device = configuration.get_access_as_mobile_device()
+        use_incognito_mode = configuration.get_use_incognito_mode()
+        window_size = configuration.get_window_size()
 
         options.add_argument(f'--user-agent={user_agent}') if user_agent else None
         options.add_argument('--use-mobile-user-agent') if access_as_mobile_device else None
@@ -114,12 +113,12 @@ class FirefoxConfigurationHandler(ConfigurationHandler):
 
     def handle(self, configuration: Configuration) -> ConfigurationHandlingResult:
         browser_type = self._extract_browser_type(configuration)
-        if browser_type != "Firefox":
+        if browser_type.casefold() != "firefox":
             return super().handle(configuration)
         return ConfigurationHandlingResult(
             executor_type=FirefoxExecutor,
             browser_options=self._create_options(configuration),
-            implicit_wait_value=get_wait_timeout(configuration))
+            implicit_wait_value=configuration.get_wait_timeout())
 
     def _create_options(self, configuration: Configuration):
         from selenium.webdriver import FirefoxOptions
@@ -127,7 +126,7 @@ class FirefoxConfigurationHandler(ConfigurationHandler):
         # TODO (fivkovic): Connect options and config.
 
         options = FirefoxOptions()
-        options.headless = True
+        options.headless = False
         options.add_argument("--window-size=1920,1080")
 
         return options
@@ -140,12 +139,12 @@ class EdgeConfigurationHandler(ConfigurationHandler):
 
     def handle(self, configuration: Configuration) -> ConfigurationHandlingResult:
         browser_type = self._extract_browser_type(configuration)
-        if browser_type != "Edge":
+        if browser_type.casefold() != "edge":
             return super().handle(configuration)
         return ConfigurationHandlingResult(
             executor_type=EdgeExecutor,
             browser_options=self._create_options(configuration),
-            implicit_wait_value=get_wait_timeout(configuration))
+            implicit_wait_value=configuration.get_wait_timeout())
 
     def _create_options(self, configuration: Configuration):
 
@@ -164,12 +163,12 @@ class OperaConfigurationHandler(ConfigurationHandler):
 
     def handle(self, configuration: Configuration) -> ConfigurationHandlingResult:
         browser_type = self._extract_browser_type(configuration)
-        if browser_type != "Opera":
+        if browser_type.casefold() != "opera":
             return super().handle(configuration)
         return ConfigurationHandlingResult(
             executor_type=OperaExecutor,
             browser_options=self._create_options(configuration),
-            implicit_wait_value=get_wait_timeout(configuration))
+            implicit_wait_value=configuration.get_wait_timeout())
 
     def _create_options(self, configuration: Configuration):
         from selenium.webdriver.opera.options import Options

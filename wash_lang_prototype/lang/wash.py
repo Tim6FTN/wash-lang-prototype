@@ -1,7 +1,11 @@
 import itertools
 import re
+import time
+from abc import abstractmethod
+from typing import Any
 
 from wash_lang_prototype.core.exceptions import WashError
+from wash_lang_prototype.core.exceptions import WashRuntimeError, WashLanguageError
 from wash_lang_prototype.core.result import ExecutionResult
 
 
@@ -16,8 +20,6 @@ class WashBase:
             setattr(self, key, item)
         super().__init__()
 
-    # TODO (fivkovic): Scope, Context
-
 
 class WashScript(WashBase):
     def __init__(self, *args, **kwargs):
@@ -25,49 +27,115 @@ class WashScript(WashBase):
         self.execution_result = ExecutionResult()
 
 
-class Configuration(WashBase):
+class ConfigurationParameterValue(WashBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.__is_valid():
-            raise WashError('Configuration invalid: not all required parameters were specified.')
-
-    # noinspection PyUnresolvedReferences
-    def __is_valid(self):
-        for e in self.configuration_entries:
-            required_parameters = [p for p in e.type.parameters if p.required]
-            if len(required_parameters) != len(e.parameters):
-                return False
-        return True
 
 
 class ConfigurationEntry(WashBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def extract_parameter_value(self, parameter_name: str) -> Any:
+        """
+        Extracts the parameter value by given name from current ConfigurationEntry instance.
+        In case the parameter with given name is not found, a WashLanguageError is raised.
 
-class ConfigurationParameterValue(WashBase):
+        Args:
+            parameter_name(str): Name of the parameter in the entry.
+        """
+        parameter_value = next(parameter.value.value for parameter in self.parameters
+                               if parameter.parameter.name == parameter_name)
+        if parameter_value is None:
+            raise WashLanguageError(f'Parameter {parameter_name} does not exist '
+                                    f'in configuration entry "{self.type.name}".')
+
+        return parameter_value
+
+
+class Configuration(WashBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def __extract_configuration_entry(self, entry_name: str) -> [ConfigurationEntry, None]:
+        """
+        Extracts configuration entry by given name from current Configuration instance.
+        In case the entry with given name is not found, a None value is returned.
 
-class OpenStatement:
-    def __init__(self, parent):
-        self.parent = parent
+        Args:
+            entry_name(str): Name of the configuration entry.
+        """
+        try:
+            return next(entry for entry in self.configuration_entries if entry.type.name == entry_name)
+        except StopIteration:
+            return None
+
+    def __extract_configuration_entry_value(self, entry_name: str, value_name: str):
+        entry = self.__extract_configuration_entry(entry_name)
+        return entry if not entry else entry.extract_parameter_value(value_name)
+
+    def get_browser_type(self) -> [str, None]:
+        """
+        Extracts 'browser type' configuration value from given configuration.
+        """
+        return self.__extract_configuration_entry_value('browser_type', 'browser_type')
+
+    def get_user_agent(self) -> [str, None]:
+        """
+        Extracts 'user agent' configuration value from given configuration.
+        """
+        return self.__extract_configuration_entry_value('user_agent', 'user_agent')
+
+    def get_access_as_mobile_device(self) -> [bool, None]:
+        """
+        Extracts 'access as mobile device' configuration value from given configuration.
+        """
+        return self.__extract_configuration_entry_value('access_as_mobile_device', 'is_active')
+
+    def get_use_incognito_mode(self) -> [bool, None]:
+        """
+        Extracts 'use incognito mode' configuration value from given configuration.
+        """
+        return self.__extract_configuration_entry_value('use_incognito_mode', 'is_active')
+
+    def get_window_size(self) -> [tuple[int, int], None]:
+        """
+        Extracts 'window size' configuration value from given configuration.
+        """
+        width_value = self.__extract_configuration_entry_value('window_size', 'width')
+        height_value = self.__extract_configuration_entry_value('window_size', 'height')
+
+        return None if not width_value or not height_value else (width_value, height_value)
+
+    def get_wait_timeout(self) -> [int, None]:
+        """
+        Extracts 'wait timeout' configuration value from given configuration.
+        """
+        return self.__extract_configuration_entry_value('wait_timeout', 'timeout')
+
+    def get_cookies(self) -> [dict[str, str], None]:
+        """
+        Extracts 'cookies' configuration value from given configuration.
+        """
+        cookie_names = self.__extract_configuration_entry_value('cookies', 'cookie_names')
+        cookie_values = self.__extract_configuration_entry_value('cookies', 'cookie_values')
+
+        return None if not cookie_names or not cookie_values else dict(zip(cookie_names, cookie_values))
 
 
-class OpenURLStatement(OpenStatement):
+class OpenURLStatement(WashBase):
     def __init__(self, parent, url):
         super().__init__(parent)
         self.url = url
 
 
-class OpenFileStatement(OpenStatement):
+class OpenFileStatement(WashBase):
     def __init__(self, parent, file_path):
         super().__init__(parent)
         self.file_path = file_path
 
 
-class OpenStringStatement(OpenStatement):
+class OpenStringStatement(WashBase):
     def __init__(self, parent, html):
         super().__init__(parent)
         self.html = html
