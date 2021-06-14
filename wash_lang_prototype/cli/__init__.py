@@ -3,7 +3,8 @@ import pkg_resources
 try:
     import click
 except ImportError:
-    raise Exception('Missing CLI dependencies')
+    raise Exception('Missing CLI dependencies. To use WASH from CLI, please run following command:/n'
+                    'pip install wash-lang-prototype[cli]')
 
 
 @click.group()
