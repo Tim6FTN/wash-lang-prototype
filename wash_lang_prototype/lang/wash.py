@@ -141,18 +141,18 @@ class OpenStringStatement(WashBase):
         self.html = html
 
 
-class StaticExpression:
+class StaticExpression(WashBase):
     def __init__(self, parent, queries, context_expression, result_key):
-        self.parent = parent
+        super().__init__(parent)
         self.queries = queries
         self.context_expression = context_expression
         self.result_key = result_key
-        self.execution_context = None
+        self.execution_context = None                       # TODO: Use execution_context
     
 
-class Query:
+class Query(WashBase):
     def __init__(self, parent, query_value):
-        self.parent = parent
+        super().__init__(parent)
         self.query_value = query_value
 
     def execute(self, execution_context):
@@ -164,9 +164,11 @@ class Query:
         else:
             return self._execute(execution_context)
 
+    @abstractmethod
     def _execute(self, execution_context):
         raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
+    @abstractmethod
     def _execute_and_flatten(self, execution_context: list):
         raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
@@ -190,12 +192,15 @@ class SelectorQuery(Query):
     def _execution_context_valid(self, execution_context) -> bool:
         return True
 
+    @abstractmethod
     def _execute(self, execution_context):
         raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
+    @abstractmethod
     def _execute_and_flatten(self, execution_context):
         raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
+    @abstractmethod
     def _execute_selector(self, execution_context):
         raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
@@ -343,22 +348,22 @@ class DataQuery(Query):
             raise ValueError(f'Unsupported DataQuery value: {self.query_value.value}')
 
 
-class QueryValue:
+class QueryValue(WashBase):
     def __init__(self, parent, value):
-        self.parent = parent
+        super().__init__(parent)
         self.value = value.strip()
 
 
-class ContextExpression:
+class ContextExpression(WashBase):
     def __init__(self, parent, expressions):
-        self.parent = parent
+        super().__init__(parent)
         self.expressions = expressions
         self.execution_result = None
 
 
-class DynamicExpression:
+class DynamicExpression(WashBase):
     def __init__(self, parent):
-        self.parent = parent
+        super().__init__(parent)
 
 
 class MouseEventCommand(DynamicExpression):
@@ -367,17 +372,18 @@ class MouseEventCommand(DynamicExpression):
         self.element_selector_queries = element_selector_queries
 
     def execute(self, execution_context):
-        element = self.__get_element(execution_context)
-        element = element[0] if isinstance(element, list) else element
-        element.click()
+        element_to_click = self.__get_element_to_click(execution_context)
+        element_to_click = element_to_click[0] if isinstance(element_to_click, list) else element_to_click
+        element_to_click.click()
 
-    def __get_element(self, execution_context):
+    def __get_element_to_click(self, execution_context):
         query_result = None
         for query in self.element_selector_queries:
             if not query_result:
                 query_result = query.execute(execution_context=execution_context)
             else:
                 query_result = query.execute(query_result)
+
         return query_result
 
 
@@ -387,6 +393,7 @@ class ScriptExecutionCommand(DynamicExpression):
         self.script = script
 
     def execute(self, execution_context):
+        # TODO: Raise exception if not a web driver instance
         execution_context.execute_script(self.script)
 
 
@@ -403,18 +410,19 @@ class KeyboardEventCommand(DynamicExpression):
             actions.send_keys(self.value)
             actions.perform()
         else:
-            element = self.__get_element(execution_context)
-            element = element[0] if isinstance(element, list) else element
-            element.clear()
-            element.send_keys(self.value)
+            element_to_type = self.__get_element_to_type(execution_context)
+            element_to_type = element_to_type[0] if isinstance(element_to_type, list) else element_to_type
+            element_to_type.clear()
+            element_to_type.send_keys(self.value)
 
-    def __get_element(self, execution_context):
+    def __get_element_to_type(self, execution_context):
         query_result = None
         for query in self.element_selector_queries:
             if not query_result:
                 query_result = query.execute(execution_context=execution_context)
             else:
                 query_result = query.execute(query_result)
+
         return query_result
 
 
@@ -458,5 +466,6 @@ wash_classes = [
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
     QueryValue,
-    MouseEventCommand, ScriptExecutionCommand, KeyboardEventCommand, SleepCommand, ExplicitWaitCommand, NavigationCommand
+    MouseEventCommand, ScriptExecutionCommand, KeyboardEventCommand,
+    SleepCommand, ExplicitWaitCommand, NavigationCommand
 ]
