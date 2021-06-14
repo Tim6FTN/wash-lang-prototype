@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from abc import ABC
 
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -8,28 +9,34 @@ from selenium.webdriver.remote.webelement import WebElement
 from textx import textx_isinstance
 from textx.metamodel import TextXMetaModel
 
+from wash_lang_prototype.core.exceptions import WashError
 from wash_lang_prototype.core.options import WashOptions
 from wash_lang_prototype.lang.wash import *
 
 
 def create_executor_instance(script: str, options: WashOptions, metamodel: TextXMetaModel,
                              model: WashScript, debug=False, **kwargs):
+    from wash_lang_prototype.core.configuration_handler import ChromeConfigurationHandler, \
+        FirefoxConfigurationHandler, EdgeConfigurationHandler, OperaConfigurationHandler
 
-    from wash_lang_prototype.core.configuration_handler import ChromeConfigurationHandler, FirefoxConfigurationHandler, EdgeConfigurationHandler, OperaConfigurationHandler
-    chrome_handler = ChromeConfigurationHandler()
+    root_handler = ChromeConfigurationHandler()
     firefox_handler = FirefoxConfigurationHandler()
     edge_handler = EdgeConfigurationHandler()
     opera_handler = OperaConfigurationHandler()
+    # TODO: default_configuration_handler = DefaultConfigurationHandler()
 
-    # TODO (fivkovic): Handle case when no configuration is specified to use default one?
-    chrome_handler.set_next(firefox_handler).set_next(edge_handler).set_next(opera_handler)
+    root_handler.set_next(firefox_handler)\
+                .set_next(edge_handler)\
+                .set_next(opera_handler)
+    # TODO: .set_next(default_configuration_handler)
 
-    result = chrome_handler.handle(model.configuration)
+    configuration_handling_result = root_handler.handle(configuration=model.configuration)
 
-    return result.executor_type(browser_options=result.browser_options,
-                                **dict(kwargs, script=script, options=options,
-                                       metamodel=metamodel, model=model, debug=debug,
-                                       implicit_wait_value=result.implicit_wait_value))
+    return configuration_handling_result.executor_type(
+        browser_options=configuration_handling_result.browser_options,
+        **dict(kwargs, script=script, options=options,
+               metamodel=metamodel, model=model, debug=debug,
+               implicit_wait_value=configuration_handling_result.implicit_wait_value))
 
 
 class WashExecutor(ABC):
