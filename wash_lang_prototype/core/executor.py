@@ -31,9 +31,10 @@ def create_executor_instance(script: str, options: WashOptions, metamodel: TextX
                                        metamodel=metamodel, model=model, debug=debug,
                                        implicit_wait_value=result.implicit_wait_value))
 
-class WashExecutor:
+
+class WashExecutor(ABC):
     """
-    Main class that handles execution logic of WASH scripts.
+    Main class that handles execution logic of WASH scripts. This is an abstract class and should not be instantiated.
     """
 
     def __init__(self, **kwargs):
@@ -49,23 +50,27 @@ class WashExecutor:
         Executes a WASH script and returns an ExecutionResult instance.
         """
         document_location = self.__extract_document_location(self.__model.open_statement)
-        webdriver_instance = self._start_webdriver_instance(url=document_location)
-        
-        execution_result = self.__execute_internal(webdriver_instance)
-        
-        wash_result = ExecutionResult(
-            parent=None,
-            start_url=document_location,
-            current_url=webdriver_instance.current_url,
-            execution_result=execution_result)
-        
-        webdriver_instance.quit()
+        try:
+            webdriver_instance = self._start_webdriver_instance(url=document_location)
 
-        if self.__debug:
-            wash_result.add_attributes(**{'script': self.__script})
-        
-        return wash_result
+            execution_result = self.__execute_internal(webdriver_instance=webdriver_instance)
 
+            wash_result = ExecutionResult(
+                parent=None,
+                start_url=document_location,
+                current_url=webdriver_instance.current_url,
+                execution_result=execution_result)
+
+            if self.__debug:
+                wash_result.add_attributes(**{'script': self.__script})
+
+            return wash_result
+        except Exception:
+            raise
+        finally:
+            webdriver_instance.quit()
+
+    @abstractmethod
     def _start_webdriver_instance(self, url: str) -> WebDriver:
         """
         Starts a new webdriver instance on the given URL.
