@@ -123,35 +123,34 @@ class WashExecutor:
         return self.__model.execution_result
 
     def __execute_context_expression(self, context: list[WebElement],
-                                     context_expression: ContextExpression, parent=None):
+                                     context_expression: ContextExpression, parent=None) -> ExecutionResult:
+        """
+        Recursively executes the given context_expression using the given context.
 
+        A context represents the current part(s) of the document (i.e. DOM tree) that is/are used for execution.
+        In other words, contexts represent the execution result of the queries in the parent context.
+        The root context is always the document that is currently being processed.
+        """
         execution_result = []
         for context_item in context:                                            # Each web element in current context
             context_item_execution_result = ExecutionResult(parent=parent)
-
             for expression in context_expression.expressions:                   # Each expression to be executed on
-                expression_queries = expression.queries                         # current context
-                expression_context_expression = expression.context_expression
-                expression_result_key = expression.result_key
-
                 expression_result = None
-                if expression_context_expression:
-                    sub_context = self.__prepare_context(context_item, expression_queries)
-                    expression_result = self.__execute_context_expression(sub_context, expression_context_expression,
+                if expression.context_expression:
+                    sub_context = self.__prepare_context(execution_context=context_item, queries=expression.queries)
+                    expression_result = self.__execute_context_expression(sub_context, expression.context_expression,
                                                                           parent=execution_result)
                 else:
-                    for query in expression_queries:
+                    for query in expression.queries:
                         if expression_result:
                             expression_result = query.execute(execution_context=expression_result)
                         else:
                             expression_result = query.execute(execution_context=context_item)
 
-                context_item_execution_result.add_attributes(**{expression_result_key: expression_result})
+                context_item_execution_result.add_attributes(**{expression.result_key: expression_result})
             execution_result.append(context_item_execution_result)
 
-        if len(execution_result) == 1:
-            return execution_result[0]
-        return execution_result
+        return execution_result[0] if len(execution_result) == 1 else execution_result
 
     @staticmethod
     def __prepare_context(execution_context: [WebElement or WebDriver], queries: list[Query]) -> list[WebElement]:
@@ -296,5 +295,3 @@ class SafariExecutor(WashExecutor):
         webdriver_instance.get(url)
 
         return webdriver_instance
-
-
