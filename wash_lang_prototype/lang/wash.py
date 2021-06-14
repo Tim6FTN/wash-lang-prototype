@@ -368,7 +368,39 @@ class ExplicitWaitCommand(DynamicExpression):
         self.timeout_value = timeout_value
 
     def execute(self, execution_context):
-        pass        # TODO: Implement
+        # TODO: Raise exception if not a web driver instance
+        from selenium.webdriver.support.ui import WebDriverWait
+
+        expected_condition = self.__get_expected_condition()
+        WebDriverWait(execution_context, self.timeout_value).until(expected_condition)
+
+    def __get_by(self):
+        from selenium.webdriver.common.by import By
+
+        if isinstance(self.selector_query, IDSelectorQuery):
+            return By.ID
+        elif isinstance(self.selector_query, NameSelectorQuery):
+            return By.NAME
+        elif isinstance(self.selector_query, TagSelectorQuery):
+            return By.TAG_NAME
+        elif isinstance(self.selector_query, ClassSelectorQuery):
+            return By.CLASS_NAME
+        elif isinstance(self.selector_query, CSSSelectorQuery):
+            return By.CSS_SELECTOR
+        elif isinstance(self.selector_query, XPathSelectorQuery):
+            return By.XPATH
+        else:
+            raise Exception()
+
+    def __get_expected_condition(self):
+        from selenium.webdriver.support import expected_conditions as ec
+
+        if self.rule == 'present':
+            return ec.presence_of_element_located((self.__get_by(), self.selector_query.query_value.value))
+        if self.rule == 'visible':
+            return ec.visibility_of_element_located((self.__get_by(), self.selector_query.query_value.value))
+        if self.rule == 'clickable':
+            return ec.element_to_be_clickable((self.__get_by(), self.selector_query.query_value.value))
 
 
 class NavigationCommand(DynamicExpression):
