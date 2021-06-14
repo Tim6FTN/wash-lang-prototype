@@ -155,12 +155,19 @@ class WashExecutor:
 
     @staticmethod
     def __prepare_context(execution_context: [WebElement or WebDriver], queries: list[Query]) -> list[WebElement]:
+        """
+        Executes a list of queries against a given execution_context and returns the result
+        in form of a list of WebElement instances which represent a new context.
+
+        A context represents the current part(s) of the document (i.e. DOM tree) that is/are used for execution.
+        In other words, contexts represent the execution result of the queries in the parent context.
+        The root context is always the document that is currently being processed.
+        """
+
         query_result = None
         for query in queries:
-            if not query_result:
-                query_result = query.execute(execution_context=execution_context)
-            else:
-                query_result = query.execute(query_result)
+            query_result = query.execute(execution_context=execution_context) \
+                if not query_result else query.execute(execution_context=query_result)
 
         return query_result
 
@@ -289,3 +296,5 @@ class SafariExecutor(WashExecutor):
         webdriver_instance.get(url)
 
         return webdriver_instance
+
+
