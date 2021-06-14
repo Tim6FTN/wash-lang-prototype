@@ -322,6 +322,97 @@ class ScriptExecutionCommand(DynamicExpression):
         execution_context.execute_script(self.script)
 
 
+class KeyboardEventCommand(DynamicExpression):
+    def __init__(self, parent, value, element_selector_queries=None):
+        super().__init__(parent)
+        self.value = value
+        self.element_selector_queries = element_selector_queries
+
+    def execute(self, execution_context):
+        if not self.element_selector_queries:
+            from selenium.webdriver.common.action_chains import ActionChains
+            actions = ActionChains(execution_context)
+            actions.send_keys(self.value)
+            actions.perform()
+        else:
+            element = self.__get_element(execution_context)
+            element = element[0] if isinstance(element, list) else element
+            element.clear()
+            element.send_keys(self.value)
+
+    def __get_element(self, execution_context):
+        query_result = None
+        for query in self.element_selector_queries:
+            if not query_result:
+                query_result = query.execute(execution_context=execution_context)
+            else:
+                query_result = query.execute(query_result)
+        return query_result
+
+
+class SleepCommand(DynamicExpression):
+    def __init__(self, parent, value):
+        super().__init__(parent)
+        self.value = value
+
+    def execute(self, _):
+        time.sleep(self.value)
+
+
+class ExplicitWaitCommand(DynamicExpression):
+    def __init__(self, parent, selector_query, rule, timeout_value=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.selector_query = selector_query
+        self.rule = rule
+        self.timeout_value = timeout_value
+
+    def execute(self, execution_context):
+        # TODO: Raise exception if not a web driver instance
+        from selenium.webdriver.support.ui import WebDriverWait
+
+        expected_condition = self.__get_expected_condition()
+        WebDriverWait(execution_context, self.timeout_value).until(expected_condition)
+
+    def __get_by(self):
+        from selenium.webdriver.common.by import By
+
+        if isinstance(self.selector_query, IDSelectorQuery):
+            return By.ID
+        elif isinstance(self.selector_query, NameSelectorQuery):
+            return By.NAME
+        elif isinstance(self.selector_query, TagSelectorQuery):
+            return By.TAG_NAME
+        elif isinstance(self.selector_query, ClassSelectorQuery):
+            return By.CLASS_NAME
+        elif isinstance(self.selector_query, CSSSelectorQuery):
+            return By.CSS_SELECTOR
+        elif isinstance(self.selector_query, XPathSelectorQuery):
+            return By.XPATH
+        else:
+            raise Exception()
+
+    def __get_expected_condition(self):
+        from selenium.webdriver.support import expected_conditions as ec
+
+        if self.rule == 'present':
+            return ec.presence_of_element_located((self.__get_by(), self.selector_query.query_value.value))
+        if self.rule == 'visible':
+            return ec.visibility_of_element_located((self.__get_by(), self.selector_query.query_value.value))
+        if self.rule == 'clickable':
+            return ec.element_to_be_clickable((self.__get_by(), self.selector_query.query_value.value))
+
+
+class NavigationCommand(DynamicExpression):
+    def __init__(self, parent, url):
+        super().__init__(parent)
+        self.url = url
+
+    def execute(self, execution_context):
+        # TODO: Raise exception if not a web driver instance
+        execution_context.get(self.url)
+
+
 wash_classes = [
     WashScript,
     Configuration, ConfigurationEntry, ConfigurationParameterValue,
@@ -331,5 +422,5 @@ wash_classes = [
     CSSSelectorQuery, XPathSelectorQuery, 
     DataQuery,
     QueryValue,
-    MouseEventCommand, ScriptExecutionCommand
+    MouseEventCommand, ScriptExecutionCommand, KeyboardEventCommand, SleepCommand, ExplicitWaitCommand, NavigationCommand
 ]

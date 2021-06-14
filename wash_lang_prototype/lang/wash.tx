@@ -113,7 +113,11 @@ ContextExpression:
 ;
 
 DynamicExpression:
-    MouseEventCommand | ScriptExecutionCommand
+        MouseEventCommand | 
+        ScriptExecutionCommand | 
+        KeyboardEventCommand | 
+        WaitCommand | 
+        NavigationCommand
 ;
 
 MouseEventCommand:
@@ -122,6 +126,34 @@ MouseEventCommand:
 
 ScriptExecutionCommand:
     'execute script' script=STRING
+;
+
+KeyboardEventCommand:
+    'type' value=STRING ('into' element_selector_queries+=SelectorQuery)?
+;
+
+WaitCommand:
+    SleepCommand | ExplicitWaitCommand                          // TODO: ImplicitWaitCommand
+;
+
+SleepCommand:
+    'wait for' value=SleepCommandValue
+;
+
+SleepCommandValue: STRICTFLOAT | INT;
+
+ExplicitWaitCommand:
+    'wait until' selector_query=SelectorQuery ':' rule=ExplicitWaitCommandRule (',' 'timeout after' timeout_value=TimeoutValue)?
+;
+
+ExplicitWaitCommandRule:
+    'present' | 'visible' | 'clickable'
+;
+
+TimeoutValue: STRICTFLOAT | INT;
+
+NavigationCommand:
+    'go to' url=STRING
 ;
 
 Comment:
