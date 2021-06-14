@@ -80,7 +80,7 @@ class WashExecutor(ABC):
         """
         pass
 
-    def __is(self, object_instance, rule_class):
+    def __is(self, object_instance: WashBase, rule_class) -> bool:
         """
         Determines whether a WASH object is an instance of a specific WASH class supported by the metamodel.
         
@@ -88,7 +88,7 @@ class WashExecutor(ABC):
             object_instance: The object to be checked.
             rule_class: The class to be used for checking.
         Returns:
-            True if object_instance is an instance of rule_class.
+            True if object_instance is an instance of rule_class, otherwise False.
         """
         return textx_isinstance(object_instance, self.__metamodel[rule_class])
 
@@ -107,21 +107,23 @@ class WashExecutor(ABC):
         elif self.__is(open_statement, OpenStringStatement.__name__):
             return 'data:text/html;charset=utf-8,' + open_statement.html
         else:
-            raise WashError('Unexpected object "{}" of type "{}"'.format(open_statement, type(open_statement)))
+            raise WashError(f'Unexpected object "{open_statement}" of type "{type(open_statement)}"')
             
     def __execute_internal(self, webdriver_instance: WebDriver) -> ExecutionResult:
+        """
+        Runs the actual execution of the current WASH script  and returns an ExecutionResult instance.
+
+        Args:
+            webdriver_instance(WebDriver): WebDriver instance to be used for script execution.
+        """
         for expression in self.__model.expressions:
             if self.__is(expression, DynamicExpression.__name__):
-                expression.execute(webdriver_instance)
+                expression.execute(execution_context=webdriver_instance)
             elif self.__is(expression, StaticExpression.__name__):
-                queries = expression.queries
-                context_expression = expression.context_expression
-                result_key = expression.result_key
-
-                root_context = self.__prepare_context(webdriver_instance, queries)
-
-                result = self.__execute_context_expression(root_context, context_expression)
-                self.__model.execution_result.add_attributes(**{result_key: result})
+                root_context = self.__prepare_context(execution_context=webdriver_instance, queries=expression.queries)
+                result = self.__execute_context_expression(context=root_context,
+                                                           context_expression=expression.context_expression)
+                self.__model.execution_result.add_attributes(**{expression.result_key: result})
             else:
                 raise WashError(f'Unsupported expression type: {expression.__class__}')
 
