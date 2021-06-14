@@ -4,18 +4,12 @@ define configuration custom_chrome_configuration {
     option browser_type {
         browser_type: "Chrome"
     }
-    option user_agent {
-        user_agent: "USER_AGENT_VALUE"
-    }
-    option access_as_mobile_device {
-        is_active: True
-    }
     option use_incognito_mode {
         is_active: True
     }
     option window_size {
-        width: 1920
-        height: 1080
+        width: 800
+        height: 600
     }
     option wait_timeout {
         timeout: 10

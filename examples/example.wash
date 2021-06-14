@@ -4,7 +4,7 @@
 import "custom_chrome_configuration.wash"
 import "custom_firefox_configuration.wash"
 
-use configuration custom_firefox_configuration
+use configuration custom_chrome_configuration
 
 open "https://fivkovic.github.io/chisel-prototype/"          ** A partially commented line
 
@@ -17,7 +17,7 @@ open "https://fivkovic.github.io/chisel-prototype/"          ** A partially comm
     ?c .item-rank : text -> rank
     ?c .score.hidden : inner_html -> page_rank_score
     ?c .info {
-        ?c time {
+        ?c time ?i 1 {
             : @datetime -> exact_time
             : text -> short_date
             : html -> inner_html
