@@ -1,10 +1,9 @@
 import codecs
-import json
 import os
 
 from textx import metamodel_for_language
 
-from wash_lang_prototype.core.exceptions import WashError
+from wash_lang_prototype.core.exceptions import WashError, WashLanguageError
 from wash_lang_prototype.core.executor import WashExecutor, create_executor_instance, ExecutionResult
 from wash_lang_prototype.core.options import WashOptions
 
@@ -64,20 +63,26 @@ class Wash:
             encoding(str): The encoding to be used for reading the contents of the WASH script file.
             debug(bool): Indicates whether debug messages should be printed or not.
         """
-        metamodel = metamodel_for_language('wash')
-        model = metamodel.model_from_str(script, encoding=encoding, file_name=script_file_path, debug=debug)
+        try:
+            metamodel = metamodel_for_language('wash')
+            model = metamodel.model_from_str(script, encoding=encoding, file_name=script_file_path, debug=debug)
 
-        # NOTE: Providing the filename as parameter is required as a workaround
-        # for using model_from_str having _tx_filename set at the same time.
+            # NOTE: Providing the filename as parameter is required as a workaround
+            # for using model_from_str having _tx_filename set at the same time.
 
-        executor = create_executor_instance(script=script, options=options, metamodel=metamodel,
-                                            model=model, debug=debug, **kwargs)
+            executor = create_executor_instance(script=script, options=options, metamodel=metamodel,
+                                                model=model, debug=debug, **kwargs)
 
-        return Wash(executor=executor)
+            return Wash(executor=executor)
+        except WashError:
+            raise
+        except Exception as e:
+            message = e.message if hasattr(e, 'message') else str(e)
+            raise WashLanguageError(message)
 
     def execute(self) -> ExecutionResult:
         """
-        Executes the WASH script and returns the execution result in form of a dictionary.
+        Executes the WASH script and returns the execution result in form of a typed object.
         """
         return self.__executor.execute()
 
@@ -85,4 +90,4 @@ class Wash:
         """
         Executes the WASH script and returns the execution result as a JSON string value.
         """
-        return json.dumps(self.__executor.execute())
+        return self.__executor.execute().to_json()

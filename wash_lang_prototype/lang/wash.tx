@@ -133,7 +133,7 @@ KeyboardEventCommand:
 ;
 
 WaitCommand:
-    SleepCommand | ExplicitWaitCommand                          // TODO: ImplicitWaitCommand
+    SleepCommand | ExplicitWaitCommand
 ;
 
 SleepCommand:

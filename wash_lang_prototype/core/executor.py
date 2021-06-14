@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from abc import ABC
 
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -8,32 +9,39 @@ from selenium.webdriver.remote.webelement import WebElement
 from textx import textx_isinstance
 from textx.metamodel import TextXMetaModel
 
+from wash_lang_prototype.core.exceptions import WashError
 from wash_lang_prototype.core.options import WashOptions
 from wash_lang_prototype.lang.wash import *
 
 
 def create_executor_instance(script: str, options: WashOptions, metamodel: TextXMetaModel,
                              model: WashScript, debug=False, **kwargs):
+    from wash_lang_prototype.core.configuration_handler import ChromeConfigurationHandler, \
+        FirefoxConfigurationHandler, EdgeConfigurationHandler, OperaConfigurationHandler
 
-    from wash_lang_prototype.core.configuration_handler import ChromeConfigurationHandler, FirefoxConfigurationHandler, EdgeConfigurationHandler, OperaConfigurationHandler
-    chrome_handler = ChromeConfigurationHandler()
+    root_handler = ChromeConfigurationHandler()
     firefox_handler = FirefoxConfigurationHandler()
     edge_handler = EdgeConfigurationHandler()
     opera_handler = OperaConfigurationHandler()
+    # TODO: default_configuration_handler = DefaultConfigurationHandler()
 
-    # TODO (fivkovic): Handle case when no configuration is specified to use default one?
-    chrome_handler.set_next(firefox_handler).set_next(edge_handler).set_next(opera_handler)
+    root_handler.set_next(firefox_handler)\
+                .set_next(edge_handler)\
+                .set_next(opera_handler)
+    # TODO: .set_next(default_configuration_handler)
 
-    result = chrome_handler.handle(model.configuration)
+    configuration_handling_result = root_handler.handle(configuration=model.configuration)
 
-    return result.executor_type(browser_options=result.browser_options,
-                                **dict(kwargs, script=script, options=options,
-                                       metamodel=metamodel, model=model, debug=debug,
-                                       implicit_wait_value=result.implicit_wait_value))
+    return configuration_handling_result.executor_type(
+        browser_options=configuration_handling_result.browser_options,
+        **dict(kwargs, script=script, options=options,
+               metamodel=metamodel, model=model, debug=debug,
+               implicit_wait_value=configuration_handling_result.implicit_wait_value))
 
-class WashExecutor:
+
+class WashExecutor(ABC):
     """
-    Main class that handles execution logic of WASH scripts.
+    Main class that handles execution logic of WASH scripts. This is an abstract class and should not be instantiated.
     """
 
     def __init__(self, **kwargs):
@@ -49,23 +57,27 @@ class WashExecutor:
         Executes a WASH script and returns an ExecutionResult instance.
         """
         document_location = self.__extract_document_location(self.__model.open_statement)
-        webdriver_instance = self._start_webdriver_instance(url=document_location)
-        
-        execution_result = self.__execute_internal(webdriver_instance)
-        
-        wash_result = ExecutionResult(
-            parent=None,
-            start_url=document_location,
-            current_url=webdriver_instance.current_url,
-            execution_result=execution_result)
-        
-        webdriver_instance.quit()
+        try:
+            webdriver_instance = self._start_webdriver_instance(url=document_location)
 
-        if self.__debug:
-            wash_result.add_attributes(**{'script': self.__script})
-        
-        return wash_result
+            execution_result = self.__execute_internal(webdriver_instance=webdriver_instance)
 
+            wash_result = ExecutionResult(
+                parent=None,
+                start_url=document_location,
+                current_url=webdriver_instance.current_url,
+                execution_result=execution_result)
+
+            if self.__debug:
+                wash_result.add_attributes(**{'script': self.__script})
+
+            return wash_result
+        except Exception:
+            raise
+        finally:
+            webdriver_instance.quit()
+
+    @abstractmethod
     def _start_webdriver_instance(self, url: str) -> WebDriver:
         """
         Starts a new webdriver instance on the given URL.
@@ -75,7 +87,7 @@ class WashExecutor:
         """
         pass
 
-    def __is(self, object_instance, rule_class):
+    def __is(self, object_instance: WashBase, rule_class) -> bool:
         """
         Determines whether a WASH object is an instance of a specific WASH class supported by the metamodel.
         
@@ -83,7 +95,7 @@ class WashExecutor:
             object_instance: The object to be checked.
             rule_class: The class to be used for checking.
         Returns:
-            True if object_instance is an instance of rule_class.
+            True if object_instance is an instance of rule_class, otherwise False.
         """
         return textx_isinstance(object_instance, self.__metamodel[rule_class])
 
@@ -102,65 +114,73 @@ class WashExecutor:
         elif self.__is(open_statement, OpenStringStatement.__name__):
             return 'data:text/html;charset=utf-8,' + open_statement.html
         else:
-            raise WashError('Unexpected object "{}" of type "{}"'.format(open_statement, type(open_statement)))
+            raise WashError(f'Unexpected object "{open_statement}" of type "{type(open_statement)}"')
             
     def __execute_internal(self, webdriver_instance: WebDriver) -> ExecutionResult:
+        """
+        Runs the actual execution of the current WASH script  and returns an ExecutionResult instance.
+
+        Args:
+            webdriver_instance(WebDriver): WebDriver instance to be used for script execution.
+        """
         for expression in self.__model.expressions:
             if self.__is(expression, DynamicExpression.__name__):
-                expression.execute(webdriver_instance)
+                expression.execute(execution_context=webdriver_instance)
             elif self.__is(expression, StaticExpression.__name__):
-                queries = expression.queries
-                context_expression = expression.context_expression
-                result_key = expression.result_key
-
-                root_context = self.__prepare_context(webdriver_instance, queries)
-
-                result = self.__execute_context_expression(root_context, context_expression)
-                self.__model.execution_result.add_attributes(**{result_key: result})
+                root_context = self.__prepare_context(execution_context=webdriver_instance, queries=expression.queries)
+                result = self.__execute_context_expression(context=root_context,
+                                                           context_expression=expression.context_expression)
+                self.__model.execution_result.add_attributes(**{expression.result_key: result})
             else:
                 raise WashError(f'Unsupported expression type: {expression.__class__}')
 
         return self.__model.execution_result
 
     def __execute_context_expression(self, context: list[WebElement],
-                                     context_expression: ContextExpression, parent=None):
+                                     context_expression: ContextExpression, parent=None) -> ExecutionResult:
+        """
+        Recursively executes the given context_expression using the given context.
 
+        A context represents the current part(s) of the document (i.e. DOM tree) that is/are used for execution.
+        In other words, contexts represent the execution result of the queries in the parent context.
+        The root context is always the document that is currently being processed.
+        """
         execution_result = []
         for context_item in context:                                            # Each web element in current context
             context_item_execution_result = ExecutionResult(parent=parent)
-
             for expression in context_expression.expressions:                   # Each expression to be executed on
-                expression_queries = expression.queries                         # current context
-                expression_context_expression = expression.context_expression
-                expression_result_key = expression.result_key
-
                 expression_result = None
-                if expression_context_expression:
-                    sub_context = self.__prepare_context(context_item, expression_queries)
-                    expression_result = self.__execute_context_expression(sub_context, expression_context_expression,
+                if expression.context_expression:
+                    sub_context = self.__prepare_context(execution_context=context_item, queries=expression.queries)
+                    expression_result = self.__execute_context_expression(sub_context, expression.context_expression,
                                                                           parent=execution_result)
                 else:
-                    for query in expression_queries:
+                    for query in expression.queries:
                         if expression_result:
                             expression_result = query.execute(execution_context=expression_result)
                         else:
                             expression_result = query.execute(execution_context=context_item)
 
-                context_item_execution_result.add_attributes(**{expression_result_key: expression_result})
+                context_item_execution_result.add_attributes(**{expression.result_key: expression_result})
             execution_result.append(context_item_execution_result)
 
-        if len(execution_result) == 1:
-            return execution_result[0]
-        return execution_result
+        return execution_result[0] if len(execution_result) == 1 else execution_result
 
     @staticmethod
     def __prepare_context(execution_context: [WebElement or WebDriver], queries: list[Query]) -> list[WebElement]:
+        """
+        Executes a list of queries against a given execution_context and returns the result
+        in form of a list of WebElement instances which represent a new context.
+
+        A context represents the current part(s) of the document (i.e. DOM tree) that is/are used for execution.
+        In other words, contexts represent the execution result of the queries in the parent context.
+        The root context is always the document that is currently being processed.
+        """
+
         query_result = None
         for query in queries:
-            if not query_result:
-                query_result = query.execute(execution_context=execution_context)
-            else:
-                query_result = query.execute(query_result)
+            query_result = query.execute(execution_context=execution_context) \
+                if not query_result else query.execute(execution_context=query_result)
 
         return query_result
 
