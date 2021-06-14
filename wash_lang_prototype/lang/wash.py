@@ -4,7 +4,6 @@ import time
 from abc import abstractmethod
 from typing import Any
 
-from wash_lang_prototype.core.exceptions import WashError
 from wash_lang_prototype.core.exceptions import WashRuntimeError, WashLanguageError
 from wash_lang_prototype.core.result import ExecutionResult
 
@@ -209,29 +208,46 @@ class IndexSelectorQuery(SelectorQuery):
     def __init__(self, parent, query_value):
         super().__init__(parent, query_value)
 
+    def execute(self, execution_context):
+        # NOTE: This method is overridden because
+        #       different behavior is expected for IndexSelectorQuery compared to all other selector queries.
+        if not isinstance(execution_context, list):
+            execution_context = [execution_context]
+
+        return self._execute(execution_context)
+
     def _execution_context_valid(self, execution_context):
         return isinstance(execution_context, list)
 
-    def _execute(self, execution_context):
+    def _execute(self, execution_context: list):
+        if not self._execution_context_valid(execution_context):
+            raise ValueError(f"{__class__}: Unsupported execution context type {execution_context.__class__}.")
+
         return self._execute_selector(execution_context)
 
     def _execute_and_flatten(self, execution_context: list) -> list:
-        result = [self._execute_selector(execution_item) for execution_item in execution_context]
-        return list(itertools.chain.from_iterable(result))
+        raise NotImplementedError(f"Calling this method from {__class__} class is not allowed.")
 
     def _execute_selector(self, execution_context):
         # TODO (fivkovic): Add first n items feature
         if re.match(r"[-+]?\d+$", self.query_value.value) is None:
-            raise ValueError(f"Index selector value is not an integer value: {self.query_value.value}.")
+            raise WashLanguageError(f"Index selector value is not an integer value: {self.query_value.value}.")
 
         index = int(self.query_value.value)
         if abs(index) == 0:
-            raise ValueError(f"Index selector value is not valid: {self.query_value.value}.")
-        if abs(index) > execution_context.count:
-            raise ValueError(f"Index accessor value out of range: "
-                             f"given value {index} exceeds collection size ({execution_context.count}).")
+            raise WashRuntimeError(f"Index selector value is not valid: {self.query_value.value}.")
+        if abs(index) > len(execution_context):
+            raise WashRuntimeError(f"Index accessor value out of range: "
+                                   f"given value {index} exceeds collection size ({len(execution_context)}).")
 
-        return list(execution_context[index - 1]) if index > 0 else execution_context[-index:]
+        """
+        NOTE: 
+            Negative value refers to skipping given number of items. 
+            Positive value refers to selecting single item on given index. 
+        """
+        selector_result = execution_context[index - 1] if index > 0 else execution_context[-index:]
+
+        return selector_result if isinstance(selector_result, list) else [selector_result]
 
 
 class IDSelectorQuery(SelectorQuery):
