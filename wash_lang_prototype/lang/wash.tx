@@ -4,11 +4,13 @@ WashScript:
     (
         import_statements*=ImportStatement
         ('use configuration' configuration=[Configuration])?
+        context_expression_definitions*=ContextExpressionDefinition
         open_statement=OpenStatement
         expressions*=Expression
     )
       |
     (
+        context_expression_definitions*=ContextExpressionDefinition
         configuration_definitions*=Configuration
     )
 ;
@@ -68,7 +70,7 @@ Expression:
 ;
 
 StaticExpression:
-    queries+=Query (context_expression=ContextExpression)? '->' result_key=ID            // TODO: Result key optional
+    queries+=Query (context_expression=ContextExpression)? ('&' context_expression_ref=[ContextExpressionDefinition])? '->' result_key=ID            // TODO: Result key optional
 ;
 
 Query:
@@ -101,15 +103,20 @@ QueryValue:
     - '->'      (result key)
     - '?'       (start of a selector query)
     - ':'       (start of a data query)
+    - '&'       (reference to a context expression definition)
     - '{'       (start of a context expression)
     - '\n'      (new line)
     This enables the user to write queries without quotes.
 */
-    value=/(.|\n)+?(?=(->|\?|:|{|\n))|[^?:{]*/
+    value=/(.|\n)+?(?=(->|\?|:|&|{|\n))|[^?:{]*/
 ;
 
 ContextExpression:
     '{' expressions+=StaticExpression '}'
+;
+
+ContextExpressionDefinition:
+    'define' name=ID context_expression=ContextExpression
 ;
 
 DynamicExpression:

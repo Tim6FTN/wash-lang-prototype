@@ -141,10 +141,11 @@ class OpenStringStatement(WashBase):
 
 
 class StaticExpression(WashBase):
-    def __init__(self, parent, queries, context_expression, result_key):
+    def __init__(self, parent, queries, context_expression, context_expression_ref, result_key):
         super().__init__(parent)
         self.queries = queries
         self.context_expression = context_expression
+        self.context_expression_ref = context_expression_ref
         self.result_key = result_key
         self.execution_context = None                       # TODO: Use execution_context
     
