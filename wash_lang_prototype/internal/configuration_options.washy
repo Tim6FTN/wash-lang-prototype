@@ -41,3 +41,11 @@ configuration_option wait_timeout {
         required integer timeout
     }
 }
+
+configuration_option cookies {
+    description: "Specifies cookies to be set and used during execution."
+    parameters {
+        required string[] cookie_names
+        required string[] cookie_values
+    }
+}
