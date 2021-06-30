@@ -73,3 +73,13 @@ def configuration_parameter_value_object_processor(configuration_parameter_value
         raise WashLanguageError(f'The type of a value in the parameter "{configuration_parameter_value.parameter.name}"'
                                 f' of configuration option {configuration_parameter_value.parent.type.name} '
                                 f'must be {parameter_type}.')
+
+
+def static_expression_object_processor(static_expression):
+    """
+    Validates if a static expression has a context expression specified in the WASH script.
+    """
+    both_specified = static_expression.context_expression and static_expression.context_expression_ref
+    if both_specified:
+        raise WashLanguageError(f'Static expression with the result key {static_expression.result_key} is not valid. '
+                                f'Either a context expression or a reference to a context expression are allowed.')

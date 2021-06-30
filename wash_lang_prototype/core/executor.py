@@ -128,8 +128,11 @@ class WashExecutor(ABC):
                 expression.execute(execution_context=webdriver_instance)
             elif self.__is(expression, StaticExpression.__name__):
                 root_context = self.__prepare_context(execution_context=webdriver_instance, queries=expression.queries)
-                result = self.__execute_context_expression(context=root_context,
-                                                           context_expression=expression.context_expression)
+
+                context_expression = expression.context_expression if expression.context_expression \
+                    else expression.context_expression_ref.context_expression
+
+                result = self.__execute_context_expression(context=root_context, context_expression=context_expression)
                 self.__model.execution_result.add_attributes(**{expression.result_key: result})
             else:
                 raise WashError(f'Unsupported expression type: {expression.__class__}')

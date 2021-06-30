@@ -10,7 +10,7 @@ def wash_language():
     """
     from .wash import wash_classes
     from .wash_object_processors import configuration_object_processor, configuration_entry_object_processor,\
-        configuration_parameter_value_object_processor
+        configuration_parameter_value_object_processor, static_expression_object_processor
 
     wash_internal_meta_model = metamodel_for_language('wash_internal')
     internal_folder = os.path.join(os.path.dirname(__file__), '..', 'internal')
@@ -25,7 +25,8 @@ def wash_language():
     object_processors_map = {
         'Configuration': configuration_object_processor,
         'ConfigurationEntry': configuration_entry_object_processor,
-        'ConfigurationParameterValue': configuration_parameter_value_object_processor
+        'ConfigurationParameterValue': configuration_parameter_value_object_processor,
+        'StaticExpression': static_expression_object_processor
     }
 
     path_to_metamodel = os.path.join(os.path.dirname(__file__), 'wash.tx')
