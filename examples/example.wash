@@ -3,10 +3,23 @@
 
 import "custom_chrome_configuration.wash"
 import "custom_firefox_configuration.wash"
+import "example_definitions.wash"
 
 use configuration custom_chrome_configuration
 
+define get_table_info_short {
+    ?c a.title : text -> title
+    ?c .source-link a {
+        : text -> link_text
+        : @href -> link_url
+    } -> link
+}
+
 open "https://fivkovic.github.io/chisel-prototype/"          ** A partially commented line
+
+?c #top-ten-table .table-entry &get_table_info_reusable -> top_ten_reusable
+
+?c #top-ten-table .table-entry &get_table_info_short -> top_ten_short
 
 ?c #top-ten-table .table-entry {
     ?c a.title : text -> title

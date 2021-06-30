@@ -1,0 +1,8 @@
+
+define get_table_info_reusable {
+    ?c a.title : text -> title
+    ?c .source-link a {
+        : text -> link_text
+        : @href -> link_url
+    } -> link
+}
