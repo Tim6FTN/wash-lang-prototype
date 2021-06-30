@@ -361,6 +361,7 @@ class DataQuery(Query):
         elif self.query_value.value[0] == '@':
             attribute_name = self.query_value.value[1:]
             return execution_item.get_attribute(attribute_name)
+        # TODO (fivkovic): Add image retrieval
         else:
             raise ValueError(f'Unsupported DataQuery value: {self.query_value.value}')
 
@@ -448,7 +449,7 @@ class SleepCommand(DynamicExpression):
         super().__init__(parent)
         self.value = value
 
-    def execute(self, _):
+    def execute(self, execution_context):
         time.sleep(self.value)
 
 
