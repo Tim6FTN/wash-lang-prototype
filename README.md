@@ -1,7 +1,8 @@
 
 # Web automation DSL 
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![GitHub release](https://img.shields.io/github/v/release/Tim6FTN/wash-lang-prototype?include_prereleases)](https://gitHub.com/Tim6FTN/wash-lang-prototype/releases/) [![Visitors Count](https://visitor-badge.glitch.me/badge?page_id=Tim6FTN.wash-lang-prototype)](https://github.com/Tim6FTN/wash-lang-prototype)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![GitHub release](https://img.shields.io/github/v/release/Tim6FTN/wash-lang-prototype?include_prereleases)](https://gitHub.com/Tim6FTN/wash-lang-prototype/releases/) [![Visitors Count](https://visitor-badge.glitch.me/badge?page_id=Tim6FTN.wash-lang-prototype)](https://github.com/Tim6FTN/wash-lang-prototype) ![PyPi](https://img.shields.io/badge/pypi-v0.0.1-blue)
+
 
 ## Introduction
 
